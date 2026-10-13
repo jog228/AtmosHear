@@ -58,7 +58,8 @@ class AmbientSound {
       const conditionEnded = !conditions.includes(id);
       if (conditionEnded && foreground && enabled) crossfading = true;
       const fadeMs = !foreground ? 0 : !enabled ? TURN_OFF_MS : CROSSFADE_MS;
-      this.fade(layer, 0, fadeMs, () => {
+      const curve = fadeMs === CROSSFADE_MS ? 'equalPower' : 'linear';
+      this.fade(layer, 0, fadeMs, curve, () => {
         layer.player.pause();
         // Keep the player for a quick resume unless its condition is gone.
         if (conditionEnded) this.remove(id);
@@ -79,7 +80,7 @@ class AmbientSound {
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
       const fadeMs = startingFromSilence ? (crossfading ? CROSSFADE_MS : FADE_IN_MS) : VOLUME_CHANGE_MS;
-      this.fade(layer, volume, fadeMs);
+      this.fade(layer, layerVolume(id, volume), fadeMs, crossfading ? 'equalPower' : 'linear');
     }
   }
 
@@ -89,12 +90,12 @@ class AmbientSound {
     for (const id of this.playing) {
       const layer = this.layers.get(id);
       if (!layer) continue;
-      this.fade(layer, 0, REPLAY_DIP_MS, async () => {
+      this.fade(layer, 0, REPLAY_DIP_MS, 'linear', async () => {
         await layer.player.seekTo(0);
         // Skip if the app went to the background (or sound was turned off) meanwhile.
         if (!this.playing.includes(id)) return;
         layer.player.play();
-        this.fade(layer, this.volume, FADE_IN_MS);
+        this.fade(layer, layerVolume(id, this.volume), FADE_IN_MS, 'linear');
       });
     }
   }
@@ -115,7 +116,9 @@ class AmbientSound {
 
   // Moves a layer's volume to `to` in small steps. Starting a new fade
   // cancels the previous one (and its onDone).
-  private fade(layer: Layer, to: number, ms: number, onDone?: () => void) {
+  // 'equalPower' keeps the combined loudness steady while one sound fades
+  // out and another fades in (straight lines dip ~3 dB in the middle).
+  private fade(layer: Layer, to: number, ms: number, curve: 'linear' | 'equalPower', onDone?: () => void) {
     clearInterval(layer.fadeTimer);
     layer.fadeTimer = undefined;
     const from = layer.player.volume;
@@ -128,7 +131,9 @@ class AmbientSound {
     let step = 0;
     layer.fadeTimer = setInterval(() => {
       step += 1;
-      layer.player.volume = from + (to - from) * (step / steps);
+      const t = step / steps;
+      const eased = curve === 'linear' ? t : to > from ? Math.sin((t * Math.PI) / 2) : 1 - Math.cos((t * Math.PI) / 2);
+      layer.player.volume = from + (to - from) * eased;
       if (step >= steps) {
         clearInterval(layer.fadeTimer);
         layer.fadeTimer = undefined;
@@ -136,6 +141,11 @@ class AmbientSound {
       }
     }, ms / steps);
   }
+}
+
+// The ambient volume, corrected for files that are louder than the rest.
+function layerVolume(id: ConditionId, volume: number) {
+  return volume * (conditionProfiles[id].soundVolume ?? 1);
 }
 
 export const ambientSound = new AmbientSound();

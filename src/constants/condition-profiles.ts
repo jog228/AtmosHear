@@ -16,6 +16,9 @@ export type ConditionProfile = {
   // Looping ambient sound from assets/sounds, or null for silence. Must be a
   // static require() so Expo bundles the file.
   sound: AudioSource | null;
+  // Optional loudness correction for a file that's louder than the others
+  // (0-1, default 1). Multiplies the ambient volume.
+  soundVolume?: number;
   // Filled in later steps: haptic pattern, light animation.
 };
 
@@ -75,8 +78,10 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Sleet',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/08-sleet.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    sound: require('../../assets/sounds/sleet.m4a'),
+    // sleet.m4a measures -21.0 LUFS vs clear.m4a at -27.3 (6.3 LU louder).
+    // 0.48 = -6.3 dB. Remove once the file is re-exported to match.
+    soundVolume: 0.48,
   },
   'fog': {
     label: 'Fog',
