@@ -84,7 +84,7 @@ export default function SettingsScreen() {
               <View style={styles.text}>
                 <Text style={styles.label}>Ambient sound</Text>
                 <Text style={styles.description}>
-                  A quiet looping sound for the current weather. Follows your silent switch.
+                  A quiet looping sound for the current weather. Adjust it with your volume buttons.
                 </Text>
               </View>
               <Switch

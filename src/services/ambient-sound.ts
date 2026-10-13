@@ -11,6 +11,7 @@ const FADE_IN_MS = 1500; // launch, returning to the app, turning sound on
 const CROSSFADE_MS = 1000; // condition changes
 const TURN_OFF_MS = 300; // Settings toggle off
 const VOLUME_CHANGE_MS = 500; // screen reader turned on/off
+const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
 
 export type AmbientState = {
   // Conditions to play, most significant first. Each one with a sound
@@ -30,11 +31,14 @@ type Layer = {
 // the conditions, settings, and app state change.
 class AmbientSound {
   private layers = new Map<ConditionId, Layer>();
+  private playing: ConditionId[] = [];
+  private volume = AMBIENT_VOLUME;
 
-  // Silent switch mutes the app; other apps' music keeps playing alongside.
+  // Plays even with the ringer switch on silent: only the volume buttons
+  // and the in-app toggle control it. Other apps' audio keeps playing.
   async configure() {
     await setAudioModeAsync({
-      playsInSilentMode: false,
+      playsInSilentMode: true,
       interruptionMode: 'mixWithOthers',
       shouldPlayInBackground: false,
       allowsRecording: false,
@@ -43,6 +47,8 @@ class AmbientSound {
 
   update({ conditions, enabled, foreground, volume }: AmbientState) {
     const wanted = enabled && foreground ? conditions.filter((id) => conditionProfiles[id].sound) : [];
+    this.playing = wanted;
+    this.volume = volume;
     let crossfading = false;
 
     // Fade out layers that should stop. Pause right away when the app goes
@@ -74,6 +80,22 @@ class AmbientSound {
       if (startingFromSilence) layer.player.play();
       const fadeMs = startingFromSilence ? (crossfading ? CROSSFADE_MS : FADE_IN_MS) : VOLUME_CHANGE_MS;
       this.fade(layer, volume, fadeMs);
+    }
+  }
+
+  // Restarts the playing sounds from the beginning with a fade-in. Does
+  // nothing while ambient sound is off or the condition has no sound.
+  replay() {
+    for (const id of this.playing) {
+      const layer = this.layers.get(id);
+      if (!layer) continue;
+      this.fade(layer, 0, REPLAY_DIP_MS, async () => {
+        await layer.player.seekTo(0);
+        // Skip if the app went to the background (or sound was turned off) meanwhile.
+        if (!this.playing.includes(id)) return;
+        layer.player.play();
+        this.fade(layer, this.volume, FADE_IN_MS);
+      });
     }
   }
 

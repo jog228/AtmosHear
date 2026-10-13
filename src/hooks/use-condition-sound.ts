@@ -8,7 +8,8 @@ import { usePreferences } from './use-preferences';
 
 // Loops the ambient sound for the given conditions while the app is in the
 // foreground and "Ambient weather sound" is on in Settings. Pass an empty
-// list for silence (e.g. while the weather is loading).
+// list for silence (e.g. while the weather is loading). Returns `replay`,
+// which restarts the sound with a fade-in.
 export function useConditionSound(conditions: ConditionId[]) {
   const { preferences } = usePreferences();
   const foreground = useIsForeground();
@@ -29,6 +30,8 @@ export function useConditionSound(conditions: ConditionId[]) {
       volume: screenReader ? AMBIENT_VOLUME_SCREEN_READER : AMBIENT_VOLUME,
     });
   }, [key, preferences.ambientSound, foreground, screenReader]);
+
+  return { replay: () => ambientSound.replay() };
 }
 
 function useIsForeground(): boolean {

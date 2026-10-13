@@ -34,7 +34,7 @@ type Props = {
   // Tints the blobs. Without it there are no blobs (e.g. on Settings).
   condition?: ConditionId;
   // How far blobs may spread past the cards: sideways to the screen edges,
-  // and up under whatever sits above (never under page text).
+  // and up only under something opaque (never under page text).
   bleed?: { top: number; sides: number };
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
@@ -74,6 +74,9 @@ export function GlassBackdrop({ condition, bleed = { top: 0, sides: 0 }, style, 
 
 const FADE_MS = 900;
 const DRIFT_MS = 24_000;
+// How far the blobs drift each way, in points.
+const DRIFT_X = 14;
+const DRIFT_Y = 10;
 
 type BlobsProps = {
   condition: ConditionId;
@@ -96,7 +99,7 @@ function Blobs({ condition, width, height, offset }: BlobsProps) {
     drift.value = withRepeat(withTiming(1, { duration: DRIFT_MS, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, [drift, reduceMotion]);
   const driftStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: (drift.value - 0.5) * 28 }, { translateY: (drift.value - 0.5) * 20 }],
+    transform: [{ translateX: (drift.value - 0.5) * DRIFT_X * 2 }, { translateY: (drift.value - 0.5) * DRIFT_Y * 2 }],
   }));
 
   if (!theme.glass || reduceTransparency) return null;
@@ -130,8 +133,7 @@ function Blobs({ condition, width, height, offset }: BlobsProps) {
 
 type Blob = { x: number; y: number; r: number };
 
-// Capped so the top blob (0.4r above the cards, plus 10px of drift) stays
-// under the Play button even on the widest phones.
+// Capped so the blobs stay soft accents on the widest phones.
 function blobRadius(width: number) {
   return Math.min(width * 0.42, 170);
 }
@@ -143,9 +145,9 @@ function blobRadius(width: number) {
 export function blobLayout(width: number, height: number): Blob[] {
   const r = blobRadius(width);
   const candidates = [
-    // Reaches 0.4r above the cards (plus drift); the home screen's bleed
-    // keeps that under the Play button.
-    { x: width * 0.12, y: r * 0.6, r },
+    // Low enough that the blob (plus drift) never reaches above the cards,
+    // where page text is.
+    { x: width * 0.12, y: r + DRIFT_Y, r },
     { x: width * 0.88, y: height * 0.5, r },
     { x: width * 0.3, y: height - r * 0.3, r },
   ];

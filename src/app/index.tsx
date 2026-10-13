@@ -5,7 +5,6 @@ import { CurrentConditions } from '@/components/current-conditions';
 import { DetailCards } from '@/components/detail-cards';
 import { GlassBackdrop } from '@/components/glass-backdrop';
 import { HourlyForecast } from '@/components/hourly-forecast';
-import { PlayButton } from '@/components/play-button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
 import { mostSignificant } from '@/constants/condition-priority';
@@ -18,7 +17,7 @@ export default function HomeScreen() {
   const { state, reload } = useWeather();
   // Only the most significant condition plays for now. To layer sounds
   // (e.g. rain + wind), pass all of weather.current.conditions instead.
-  useConditionSound(state.status === 'ready' ? [mostSignificant(state.weather.current.conditions)] : []);
+  const { replay } = useConditionSound(state.status === 'ready' ? [mostSignificant(state.weather.current.conditions)] : []);
 
   if (state.status === 'loading') return <LoadingState />;
   if (state.status === 'error') return <ErrorState onRetry={reload} />;
@@ -33,14 +32,12 @@ export default function HomeScreen() {
       ]}
     >
       <ScreenHeader place={place} weather={weather} />
-      <CurrentConditions current={weather.current} />
-      {/* Placeholder: sound and haptics are added in a later step. */}
-      <PlayButton onPress={() => {}} />
-      {/* Only cards go in the backdrop: page text can't sit on the blobs.
-          The blobs may spread up under the Play button, never above it. */}
+      <CurrentConditions current={weather.current} onReplay={replay} />
+      {/* Only cards go in the backdrop: page text can't sit on the blobs, so
+          they spread sideways to the screen edges but never up. */}
       <GlassBackdrop
         condition={mostSignificant(weather.current.conditions)}
-        bleed={{ top: 80, sides: spacing.md }}
+        bleed={{ top: 0, sides: spacing.md }}
         style={styles.cards}
       >
         <DetailCards current={weather.current} />

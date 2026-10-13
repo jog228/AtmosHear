@@ -1,27 +1,43 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { describeConditions } from '@/constants/condition-profiles';
-import { type Theme } from '@/constants/theme';
+import { mostSignificant } from '@/constants/condition-priority';
+import { conditionProfiles, describeConditions } from '@/constants/condition-profiles';
+import { spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CurrentWeather } from '@/services/weather-data';
 
 import { WeatherIcon } from './weather-icon';
 
-export function CurrentConditions({ current }: { current: CurrentWeather }) {
+type Props = {
+  current: CurrentWeather;
+  // Tapping the icon replays the condition's sound (and later its haptics).
+  onReplay: () => void;
+};
+
+export function CurrentConditions({ current, onReplay }: Props) {
   const styles = createStyles(useTheme());
   const description = describeConditions(current.conditions);
+  const label = conditionProfiles[mostSignificant(current.conditions)].label.toLowerCase();
 
   return (
-    <View
-      style={styles.container}
-      accessible
-      accessibilityLabel={`${description}, ${current.temperature} degrees Fahrenheit`}
-    >
-      <WeatherIcon conditions={current.conditions} size={220} />
-      <Text style={styles.condition}>{description}</Text>
-      <Text style={styles.temperature} maxFontSizeMultiplier={1.3}>
-        {current.temperature}°
-      </Text>
+    <View style={styles.container}>
+      {/* No visible button: the icon itself is the control. */}
+      <Pressable
+        onPress={onReplay}
+        accessibilityRole="button"
+        // "Replay clear weather", but "Replay severe weather alert".
+        accessibilityLabel={`Replay ${label.includes('weather') ? label : `${label} weather`}`}
+        accessibilityHint="Plays the sound and vibration for this weather"
+        style={({ pressed }) => pressed && styles.pressed}
+      >
+        <WeatherIcon conditions={current.conditions} size={220} />
+      </Pressable>
+      <View accessible accessibilityLabel={`${description}, ${current.temperature} degrees Fahrenheit`}>
+        <Text style={styles.condition}>{description}</Text>
+        <Text style={styles.temperature} maxFontSizeMultiplier={1.3}>
+          {current.temperature}°
+        </Text>
+      </View>
     </View>
   );
 }
@@ -30,6 +46,12 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     container: {
       alignItems: 'center',
+      gap: spacing.xs,
+    },
+    // Subtle cue that the icon is tappable.
+    pressed: {
+      transform: [{ scale: 0.94 }],
+      opacity: 0.85,
     },
     condition: {
       fontSize: 24,
@@ -42,6 +64,7 @@ function createStyles(theme: Theme) {
       fontWeight: '200',
       color: theme.colors.largeNumber,
       fontVariant: ['tabular-nums'],
+      textAlign: 'center',
     },
   });
 }
