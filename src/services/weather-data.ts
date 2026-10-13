@@ -3,7 +3,8 @@ import type { ConditionId } from '@/constants/conditions';
 // The one weather shape the app uses. Every provider (Open-Meteo, NWS, demo)
 // converts its own response into this. Units: °F, mph, percent.
 
-export type WeatherSource = 'open-meteo' | 'nws' | 'cache' | 'demo';
+// 'test' is Developer mode's filler data; 'demo' is the last-resort fallback.
+export type WeatherSource = 'open-meteo' | 'nws' | 'cache' | 'demo' | 'test';
 
 export type CurrentWeather = {
   // Most important first, e.g. ['light-rain', 'wind'].

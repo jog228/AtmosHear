@@ -1,48 +1,61 @@
-import { CONDITION_IDS, type ConditionId } from '@/constants/conditions';
+import type { ConditionId } from '@/constants/conditions';
+import { getTestWeatherOption, HOURLY_RAIN_CHANCE } from '@/constants/test-weather';
 
 import { formatHour } from '../time';
 import type { HourlyForecast, WeatherData } from '../weather-data';
 
 const HOUR_MS = 60 * 60 * 1000;
 
-// Made-up weather, used when every live source and the saved copy are
-// unavailable. The current conditions default to an overlap (rain + wind).
-// The hourly row walks through the conditions in order (clear, partly
-// cloudy, overcast, ...), so the demo shows off a dozen of them at once.
+// Builds believable weather from a test weather option (values live in
+// src/constants/test-weather.ts). Used by Developer mode ('test') and as the
+// last-resort fallback when no live or saved weather exists ('demo').
 export function getDemoWeather(
   locationName: string,
-  conditions: ConditionId[] = ['light-rain', 'wind'],
+  optionId = 'light-rain+wind',
+  source: 'demo' | 'test' = 'demo',
 ): WeatherData {
+  const option = getTestWeatherOption(optionId);
   const now = Date.now();
   const startOfHour = now - (now % HOUR_MS);
+  const nowHour = new Date(now).getHours();
+  const hourConditions = option.forecast.flatMap(([conditions, count]) => Array(count).fill(conditions) as ConditionId[][]);
 
-  const hourly: HourlyForecast[] = Array.from({ length: 12 }, (_, i) => {
+  // Warmest mid-afternoon, coolest before dawn.
+  const daily = (hour: number) => Math.sin((2 * Math.PI * (hour - 9)) / 24);
+
+  const hourly: HourlyForecast[] = hourConditions.slice(0, 12).map((conditions, i) => {
     const date = new Date(startOfHour + (i + 1) * HOUR_MS);
     const hour = date.getHours();
+    const typicalRain = Math.max(...conditions.map((id) => HOURLY_RAIN_CHANCE[id]));
+    // Small, repeatable variation so the row doesn't look copy-pasted.
+    const wobble = typicalRain === 0 ? 0 : ((i * 7) % 11) - 5;
     return {
       time: date.getTime(),
       hourLabel: formatHour(hour),
-      conditions: [CONDITION_IDS[i % CONDITION_IDS.length]],
-      isDay: hour >= 7 && hour < 19,
-      temperature: 58 - Math.round(i / 2),
-      rainChance: Math.max(20, 80 - i * 5),
+      conditions,
+      isDay: isDaytime(hour),
+      temperature: Math.round(option.temperature + option.dailySwing * (daily(hour) - daily(nowHour))),
+      rainChance: Math.min(100, Math.max(0, typicalRain + wobble)),
     };
   });
 
-  const hour = new Date(now).getHours();
   return {
-    source: 'demo',
+    source,
     locationName,
     updatedAt: now,
     current: {
-      conditions,
-      isDay: hour >= 7 && hour < 19,
-      temperature: 58,
-      feelsLike: 52,
-      humidity: 88,
-      windSpeed: 22,
-      rainChance: 80,
+      conditions: option.conditions,
+      isDay: isDaytime(nowHour),
+      temperature: option.temperature,
+      feelsLike: option.feelsLike,
+      humidity: option.humidity,
+      windSpeed: option.windSpeed,
+      rainChance: option.rainChance,
     },
     hourly,
   };
+}
+
+function isDaytime(hour: number) {
+  return hour >= 7 && hour < 19;
 }

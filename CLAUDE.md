@@ -43,6 +43,10 @@ Playback (looping, crossfades, background pause, VoiceOver ducking, the Settings
 - Sound-only / vibration-only / light-only modes.
 - High-contrast theme.
 
+## Developer mode
+
+Settings › Developer replaces live weather with filler data for testing and presenting (no API calls), or forces one live provider (Open-Meteo or NWS, no fallback). All filler values and the list of test conditions and combinations live in `src/constants/test-weather.ts`; `src/services/providers/demo.ts` turns them into a 12-hour forecast. The same filler is the last-resort fallback when no live or saved weather exists. A "Developer mode" pill always shows on the home screen while it's on.
+
 ## Design direction
 
 Use `design/reference.png` for layout and mood, not as an exact copy:

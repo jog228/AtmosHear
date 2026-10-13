@@ -1,5 +1,3 @@
-import { demoConditions, forceDemo, simulateOutage } from '@/constants/debug';
-
 import type { Place } from './location';
 import { getDemoWeather } from './providers/demo';
 import { fetchNws } from './providers/nws';
@@ -7,19 +5,28 @@ import { fetchOpenMeteo } from './providers/open-meteo';
 import { loadCachedWeather, saveCachedWeather } from './weather-cache';
 import type { WeatherData } from './weather-data';
 
+// 'auto' is the normal fallback chain. Developer mode can force one live
+// provider instead, to test it on its own.
+export type LiveSource = 'auto' | 'open-meteo' | 'nws';
+
 const liveProviders = [
-  { name: 'Open-Meteo', fetch: fetchOpenMeteo, simulateOutage: simulateOutage.openMeteo },
-  { name: 'NWS', fetch: fetchNws, simulateOutage: simulateOutage.nws },
-];
+  { source: 'open-meteo', name: 'Open-Meteo', fetch: fetchOpenMeteo },
+  { source: 'nws', name: 'NWS', fetch: fetchNws },
+] as const;
 
 // Fallback order: Open-Meteo → NWS → last saved forecast → demo data.
 // Always resolves, so the app always has something to show and play.
-export async function getWeather(place: Place): Promise<WeatherData> {
-  if (__DEV__ && forceDemo) return getDemoWeather(place.name, demoConditions);
+// A forced provider has no fallback: if it fails, the error shows.
+export async function getWeather(place: Place, source: LiveSource = 'auto'): Promise<WeatherData> {
+  if (source !== 'auto') {
+    const provider = liveProviders.find((p) => p.source === source)!;
+    const data = await provider.fetch(place);
+    saveCachedWeather(data);
+    return data;
+  }
 
   for (const provider of liveProviders) {
     try {
-      if (__DEV__ && provider.simulateOutage) throw new Error('Simulated outage');
       const data = await provider.fetch(place);
       saveCachedWeather(data);
       return data;

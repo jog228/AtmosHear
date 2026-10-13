@@ -14,7 +14,7 @@ import { useWeather } from '@/hooks/use-weather';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { state, reload } = useWeather();
+  const { state, reload, developerMode } = useWeather();
   // Only the most significant condition plays for now. To layer sounds
   // (e.g. rain + wind), pass all of weather.current.conditions instead.
   const { replay } = useConditionSound(state.status === 'ready' ? [mostSignificant(state.weather.current.conditions)] : []);
@@ -31,7 +31,7 @@ export default function HomeScreen() {
         { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
       ]}
     >
-      <ScreenHeader place={place} weather={weather} />
+      <ScreenHeader place={place} weather={weather} developerMode={developerMode} />
       <CurrentConditions current={weather.current} onReplay={replay} />
       {/* Only cards go in the backdrop: page text can't sit on the blobs, so
           they spread sideways to the screen edges but never up. */}

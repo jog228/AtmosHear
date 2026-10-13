@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { spacing, type Theme } from '@/constants/theme';
+import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Place } from '@/services/location';
 import { formatSavedTime } from '@/services/time';
@@ -11,9 +11,11 @@ import type { WeatherData } from '@/services/weather-data';
 type Props = {
   place: Place;
   weather: WeatherData;
+  // Shows a "Developer mode" pill so test weather is never mistaken for real.
+  developerMode: boolean;
 };
 
-export function ScreenHeader({ place, weather }: Props) {
+export function ScreenHeader({ place, weather, developerMode }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const source = describeSource(weather);
@@ -23,6 +25,11 @@ export function ScreenHeader({ place, weather }: Props) {
       <Text style={styles.title} accessibilityRole="header" accessibilityLabel="AtmosHear">
         AtmosHear
       </Text>
+      {developerMode && (
+        <View style={styles.pill}>
+          <Text style={styles.pillText}>Developer mode</Text>
+        </View>
+      )}
       <Text style={styles.location}>{weather.locationName}</Text>
       {place.isFallback && (
         <Text style={styles.note}>Location unavailable, showing default</Text>
@@ -61,6 +68,8 @@ function describeSource(weather: WeatherData): { label: string; spoken: string }
     }
     case 'demo':
       return { label: 'Demo data', spoken: 'Live weather unavailable. Showing demo data, not real weather.' };
+    case 'test':
+      return { label: 'Test weather', spoken: 'Test weather, not real weather.' };
   }
 }
 
@@ -73,6 +82,18 @@ function createStyles(theme: Theme) {
     },
     title: {
       fontSize: 20,
+      fontWeight: '700',
+      color: theme.colors.heading,
+    },
+    pill: {
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: 3,
+      borderRadius: radius.pill,
+      borderWidth: 1.5,
+      borderColor: theme.colors.heading,
+    },
+    pillText: {
+      fontSize: 13,
       fontWeight: '700',
       color: theme.colors.heading,
     },
