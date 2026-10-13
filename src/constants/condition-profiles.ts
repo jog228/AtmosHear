@@ -2,12 +2,13 @@ import type { ImageProps } from 'expo-image';
 
 import { sortByPriority } from './condition-priority';
 import type { ConditionId } from './conditions';
-import { palette } from './theme';
+import { darkPalette, palette } from './theme';
 
 export type ConditionProfile = {
   label: string;
-  // Accent color for this condition (e.g. the detail card icons).
-  color: string;
+  // Accent color for this condition (e.g. the detail card icons), for the
+  // light and dark themes. Dark colors must reach 3:1 on the navy background.
+  color: { light: string; dark: string };
   // 1024x1024 PNG from assets/icons/weather-icons. Must be a static
   // require() so Expo bundles the file.
   icon: ImageProps['source'];
@@ -15,75 +16,75 @@ export type ConditionProfile = {
 };
 
 // The single place that defines how each condition looks (and later sounds
-// and feels). To change a condition's color, swap the palette name below.
+// and feels). To change a condition's color, swap the palette names below.
 // To change its icon, replace the PNG (same file name) or the require().
 export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'clear': {
     label: 'Clear',
-    color: palette.sun,
+    color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/01-clear.png'),
   },
   'partly-cloudy': {
     label: 'Partly cloudy',
-    color: palette.sun,
+    color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
   },
   'overcast': {
     label: 'Overcast',
-    color: palette.gray,
+    color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/03-overcast.png'),
   },
   'light-rain': {
     label: 'Light rain',
-    color: palette.periwinkle,
+    color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
   },
   'heavy-rain': {
     label: 'Heavy rain',
-    color: palette.deepBlue,
+    color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
   },
   'thunderstorm': {
     label: 'Thunderstorm',
-    color: palette.ink,
+    color: { light: palette.ink, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
   },
   'snow': {
     label: 'Snow',
-    color: palette.deepBlue,
+    color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
     icon: require('../../assets/icons/weather-icons/07-snow.png'),
   },
   'sleet': {
     label: 'Sleet',
-    color: palette.deepBlue,
+    color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/08-sleet.png'),
   },
   'fog': {
     label: 'Fog',
-    color: palette.gray,
+    color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/09-fog.png'),
   },
   'wind': {
     label: 'Windy',
-    color: palette.periwinkle,
+    color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/10-wind.png'),
   },
   'extreme-heat': {
     label: 'Extreme heat',
     // TODO: awaiting final color from design team.
-    color: palette.sun,
+    color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
   },
   'extreme-cold': {
     label: 'Extreme cold',
     // TODO: awaiting final color from design team.
-    color: palette.periwinkle,
+    color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
   },
   'severe-alert': {
     label: 'Severe weather alert',
     // TODO: awaiting final color from design team.
-    color: palette.deepBlue,
+    color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
   },
 };

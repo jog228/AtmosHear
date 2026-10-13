@@ -1,7 +1,11 @@
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
+
+// ThemeProvider hides the splash screen once the saved theme has loaded.
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (

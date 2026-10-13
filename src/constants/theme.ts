@@ -1,7 +1,7 @@
 // The only file in the app that contains hex codes. Components read colors
 // through `useTheme()` by token name (e.g. `colors.textPrimary`).
 
-// Team palette. Contrast rules (WCAG AA) for light backgrounds:
+// Light palette. Contrast rules (WCAG AA) for light backgrounds:
 // - Small text may only use ink, deepBlue, or slate.
 // - periwinkle is for text 24px+ (or 19px+ bold), icons, and fills only.
 // - gray and sun are never text.
@@ -17,7 +17,25 @@ export const palette = {
   mist: '#E8EDF2', // pale blue-gray page background
 };
 
-export type ThemeName = 'light' | 'highContrast';
+// Dark palette. Contrast rules (WCAG AA) on the navy background:
+// - royalBlue (2.6:1) is never text or thin icons: fill only, white text on top.
+// - black is only for shadows.
+// - Every other color passes as text on navy and on navyCard.
+export const darkPalette = {
+  navy: '#091141', // page background
+  // TODO: derived card color, confirm with design team.
+  // navy mixed with 22% royalBlue: a slightly lighter navy.
+  navyCard: '#121E61',
+  yellow: '#FCDE62',
+  iceBlue: '#E3EEFA',
+  periwinkle: '#A1B2FC',
+  royalBlue: '#334BD3',
+  black: '#000000',
+  gray: '#B8BAC2',
+  white: '#FFFFFF',
+};
+
+export type ThemeName = 'light' | 'dark' | 'highContrast';
 
 export type ThemeColors = {
   background: string;
@@ -25,11 +43,20 @@ export type ThemeColors = {
   textPrimary: string;
   textSecondary: string;
   heading: string;
+  // Accents, icons, links.
   accent: string;
+  // The big temperature.
+  largeNumber: string;
   buttonBackground: string;
   buttonText: string;
+  secondaryButtonBackground: string;
+  secondaryButtonText: string;
   border: string;
+  // Includes its own transparency.
   shadow: string;
+  switchTrackOn: string;
+  switchTrackOff: string;
+  switchThumb: string;
 };
 
 export type Theme = {
@@ -37,9 +64,9 @@ export type Theme = {
   colors: ThemeColors;
   statusBarStyle: 'dark' | 'light';
   cardBorderWidth: number;
-  // When false, condition accents use `colors.accent` instead of each
-  // condition's own color from condition-profiles.ts.
-  useConditionColors: boolean;
+  // Which of each condition's colors (in condition-profiles.ts) to use, or
+  // 'accent' to use `colors.accent` for every condition.
+  conditionColors: 'light' | 'dark' | 'accent';
 };
 
 export const lightTheme: Theme = {
@@ -51,16 +78,49 @@ export const lightTheme: Theme = {
     textSecondary: palette.slate,
     heading: palette.deepBlue,
     accent: palette.deepBlue,
+    largeNumber: palette.ink,
     buttonBackground: palette.deepBlue,
     buttonText: palette.white,
+    secondaryButtonBackground: palette.ink,
+    secondaryButtonText: palette.white,
     border: palette.gray,
-    shadow: palette.ink,
+    shadow: withAlpha(palette.ink, 0.08),
+    switchTrackOn: palette.deepBlue,
+    switchTrackOff: palette.gray,
+    switchThumb: palette.white,
   },
   statusBarStyle: 'dark',
   cardBorderWidth: 0,
-  useConditionColors: true,
+  conditionColors: 'light',
 };
 
+export const darkTheme: Theme = {
+  name: 'dark',
+  colors: {
+    background: darkPalette.navy,
+    card: darkPalette.navyCard,
+    textPrimary: darkPalette.white,
+    textSecondary: darkPalette.gray,
+    heading: darkPalette.iceBlue,
+    accent: darkPalette.periwinkle,
+    largeNumber: darkPalette.periwinkle,
+    buttonBackground: darkPalette.yellow,
+    buttonText: darkPalette.navy,
+    secondaryButtonBackground: darkPalette.royalBlue,
+    secondaryButtonText: darkPalette.white,
+    border: withAlpha(darkPalette.royalBlue, 0.6),
+    // Shadows barely show on navy, so dark cards also get a 1px border.
+    shadow: withAlpha(darkPalette.black, 0.35),
+    switchTrackOn: darkPalette.periwinkle,
+    switchTrackOff: withAlpha(darkPalette.gray, 0.4),
+    switchThumb: darkPalette.white,
+  },
+  statusBarStyle: 'light',
+  cardBorderWidth: 1,
+  conditionColors: 'dark',
+};
+
+// Overrides both light and dark when turned on in Settings.
 export const highContrastTheme: Theme = {
   name: 'highContrast',
   colors: {
@@ -70,25 +130,22 @@ export const highContrastTheme: Theme = {
     textSecondary: palette.white,
     heading: palette.white,
     accent: palette.sun,
+    largeNumber: palette.white,
     buttonBackground: palette.sun,
     buttonText: palette.ink,
+    secondaryButtonBackground: palette.white,
+    secondaryButtonText: palette.ink,
     border: palette.white,
-    shadow: palette.ink,
+    shadow: withAlpha(palette.ink, 0),
+    switchTrackOn: palette.sun,
+    switchTrackOff: palette.white,
+    switchThumb: palette.ink,
   },
   statusBarStyle: 'light',
   cardBorderWidth: 2,
   // Some condition colors (e.g. thunderstorm = ink) would vanish on an ink
   // background, so high contrast uses sun for every condition accent.
-  useConditionColors: false,
-};
-
-// TODO: dark palette pending from design team.
-// Add `darkTheme: Theme` here with a full `colors` set, then add 'dark' to
-// ThemeName and `themes`, and offer it in src/app/settings.tsx.
-
-export const themes: Record<ThemeName, Theme> = {
-  light: lightTheme,
-  highContrast: highContrastTheme,
+  conditionColors: 'accent',
 };
 
 // Adds transparency to a 6-digit hex token, e.g. withAlpha(colors.accent, 0.1).
@@ -106,6 +163,6 @@ export function cardShadow(theme: Theme) {
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.border,
     borderWidth: theme.cardBorderWidth,
-    boxShadow: `0 4px 16px ${withAlpha(theme.colors.shadow, 0.08)}`,
+    boxShadow: `0 4px 16px ${theme.colors.shadow}`,
   };
 }

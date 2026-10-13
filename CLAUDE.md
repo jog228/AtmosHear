@@ -37,6 +37,7 @@ Use `design/reference.png` for layout and mood, not as an exact copy:
 - Large condition illustration, condition name, large temperature.
 - A row of detail cards and a horizontal hourly forecast.
 - All text must meet WCAG AA contrast (4.5:1).
+- Light, dark, and high-contrast themes live in `src/constants/theme.ts`. Components only use token names, never hex codes. Dark follows the phone's setting unless overridden in Settings; high contrast overrides both. In dark mode, royalBlue is a fill only, never text.
 - The accent color comes from the current condition, defined in one theme file.
 
 ## Code organization

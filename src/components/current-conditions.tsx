@@ -40,7 +40,7 @@ function createStyles(theme: Theme) {
     temperature: {
       fontSize: 88,
       fontWeight: '200',
-      color: theme.colors.textPrimary,
+      color: theme.colors.largeNumber,
       fontVariant: ['tabular-nums'],
     },
   });
