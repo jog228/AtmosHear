@@ -57,8 +57,10 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Heavy rain',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    sound: require('../../assets/sounds/heavy-rain.m4a'),
+    // Meant to sit between clear and thunderstorm, but the file measures
+    // -21.1 LUFS (same as thunderstorm), so this brings it to about -24.2.
+    soundVolume: 0.7,
   },
   'thunderstorm': {
     label: 'Thunderstorm',

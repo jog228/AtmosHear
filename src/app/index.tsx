@@ -7,7 +7,7 @@ import { GlassBackdrop } from '@/components/glass-backdrop';
 import { HourlyForecast } from '@/components/hourly-forecast';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
-import { mostSignificant } from '@/constants/condition-priority';
+import { mostSignificant, sortByPriority } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
 import { useConditionSound } from '@/hooks/use-condition-sound';
 import { useWeather } from '@/hooks/use-weather';
@@ -15,9 +15,8 @@ import { useWeather } from '@/hooks/use-weather';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, reload, developerMode } = useWeather();
-  // Only the most significant condition plays for now. To layer sounds
-  // (e.g. rain + wind), pass all of weather.current.conditions instead.
-  const { replay } = useConditionSound(state.status === 'ready' ? [mostSignificant(state.weather.current.conditions)] : []);
+  // Every current condition with a sound plays as its own layer.
+  const { replay } = useConditionSound(state.status === 'ready' ? sortByPriority(state.weather.current.conditions) : []);
 
   if (state.status === 'loading') return <LoadingState />;
   if (state.status === 'error') return <ErrorState onRetry={reload} />;

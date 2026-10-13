@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 
-import { mostSignificant } from '@/constants/condition-priority';
+import { sortByPriority } from '@/constants/condition-priority';
 import { conditionProfiles } from '@/constants/condition-profiles';
+import type { ConditionId } from '@/constants/conditions';
 import { getTestWeatherOption } from '@/constants/test-weather';
 import { spacing, type Theme } from '@/constants/theme';
 import { usePreferences } from '@/hooks/use-preferences';
@@ -70,11 +71,14 @@ export function DeveloperSettings() {
   );
 }
 
-// "sleet.m4a" (files are named after their condition) or "none yet".
-function soundStatus(conditions: Parameters<typeof mostSignificant>[0], ambientSound: boolean) {
-  const main = mostSignificant(conditions);
-  const file = conditionProfiles[main].sound ? `${main}.m4a` : 'none yet';
-  return ambientSound ? file : `${file} (ambient sound is off)`;
+// "thunderstorm.m4a + heavy-rain.m4a" (files are named after their
+// condition) or "none yet".
+function soundStatus(conditions: ConditionId[], ambientSound: boolean) {
+  const files = sortByPriority(conditions)
+    .filter((id) => conditionProfiles[id].sound)
+    .map((id) => `${id}.m4a`);
+  const status = files.length ? files.join(' + ') : 'none yet';
+  return ambientSound ? status : `${status} (ambient sound is off)`;
 }
 
 function createStyles(theme: Theme) {

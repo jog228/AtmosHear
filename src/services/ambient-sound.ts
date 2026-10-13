@@ -15,7 +15,7 @@ const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
 
 export type AmbientState = {
   // Conditions to play, most significant first. Each one with a sound
-  // becomes a looping layer, so rain + wind can play together later.
+  // becomes a looping layer, so thunderstorm + heavy rain play together.
   conditions: ConditionId[];
   enabled: boolean;
   foreground: boolean;
@@ -46,17 +46,19 @@ class AmbientSound {
   }
 
   update({ conditions, enabled, foreground, volume }: AmbientState) {
+    // Conditions without a sound file are skipped.
     const wanted = enabled && foreground ? conditions.filter((id) => conditionProfiles[id].sound) : [];
+    // Adding, removing, or swapping layers while sound is playing crossfades
+    // them together; starting from silence fades in.
+    const crossfading = this.playing.length > 0 && wanted.length > 0 && wanted.join() !== this.playing.join();
     this.playing = wanted;
     this.volume = volume;
-    let crossfading = false;
 
     // Fade out layers that should stop. Pause right away when the app goes
     // to the background (timers don't run there).
     for (const [id, layer] of this.layers) {
       if (wanted.includes(id)) continue;
       const conditionEnded = !conditions.includes(id);
-      if (conditionEnded && foreground && enabled) crossfading = true;
       const fadeMs = !foreground ? 0 : !enabled ? TURN_OFF_MS : CROSSFADE_MS;
       const curve = fadeMs === CROSSFADE_MS ? 'equalPower' : 'linear';
       this.fade(layer, 0, fadeMs, curve, () => {
@@ -77,10 +79,12 @@ class AmbientSound {
         this.layers.set(id, layer);
       }
       // Never jump to full volume: anything starting from silence fades in.
+      // Layers already playing glide to their new level (e.g. quieter once
+      // another layer joins).
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
-      const fadeMs = startingFromSilence ? (crossfading ? CROSSFADE_MS : FADE_IN_MS) : VOLUME_CHANGE_MS;
-      this.fade(layer, layerVolume(id, volume), fadeMs, crossfading ? 'equalPower' : 'linear');
+      const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? FADE_IN_MS : VOLUME_CHANGE_MS;
+      this.fade(layer, layerVolume(id, volume, wanted.length), fadeMs, crossfading ? 'equalPower' : 'linear');
     }
   }
 
@@ -95,7 +99,7 @@ class AmbientSound {
         // Skip if the app went to the background (or sound was turned off) meanwhile.
         if (!this.playing.includes(id)) return;
         layer.player.play();
-        this.fade(layer, layerVolume(id, this.volume), FADE_IN_MS, 'linear');
+        this.fade(layer, layerVolume(id, this.volume, this.playing.length), FADE_IN_MS, 'linear');
       });
     }
   }
@@ -143,9 +147,12 @@ class AmbientSound {
   }
 }
 
-// The ambient volume, corrected for files that are louder than the rest.
-function layerVolume(id: ConditionId, volume: number) {
-  return volume * (conditionProfiles[id].soundVolume ?? 1);
+// The ambient volume, corrected for files that are louder than the rest and
+// lowered when layers stack, so a combination isn't louder than one sound:
+// about 71% each for two layers, 58% each for three.
+function layerVolume(id: ConditionId, volume: number, layerCount: number) {
+  const stackGain = 1 / Math.sqrt(Math.max(1, layerCount));
+  return volume * (conditionProfiles[id].soundVolume ?? 1) * stackGain;
 }
 
 export const ambientSound = new AmbientSound();
