@@ -3,10 +3,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CurrentConditions } from '@/components/current-conditions';
 import { DetailCards } from '@/components/detail-cards';
+import { GlassBackdrop } from '@/components/glass-backdrop';
 import { HourlyForecast } from '@/components/hourly-forecast';
 import { PlayButton } from '@/components/play-button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
+import { mostSignificant } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
 import { useWeather } from '@/hooks/use-weather';
 
@@ -30,8 +32,16 @@ export default function HomeScreen() {
       <CurrentConditions current={weather.current} />
       {/* Placeholder: sound and haptics are added in a later step. */}
       <PlayButton onPress={() => {}} />
-      <DetailCards current={weather.current} />
-      <HourlyForecast hours={weather.hourly} />
+      {/* Only cards go in the backdrop: page text can't sit on the blobs.
+          The blobs may spread up under the Play button, never above it. */}
+      <GlassBackdrop
+        condition={mostSignificant(weather.current.conditions)}
+        bleed={{ top: 80, sides: spacing.md }}
+        style={styles.cards}
+      >
+        <DetailCards current={weather.current} />
+        <HourlyForecast hours={weather.hourly} />
+      </GlassBackdrop>
     </ScrollView>
   );
 }
@@ -40,5 +50,8 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
     paddingHorizontal: spacing.md,
+  },
+  cards: {
+    gap: spacing.lg,
   },
 });

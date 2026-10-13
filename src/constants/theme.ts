@@ -1,3 +1,5 @@
+import type { ConditionId } from './conditions';
+
 // The only file in the app that contains hex codes. Components read colors
 // through `useTheme()` by token name (e.g. `colors.textPrimary`).
 
@@ -59,11 +61,38 @@ export type ThemeColors = {
   switchThumb: string;
 };
 
+// Frosted glass cards over soft condition-colored blobs.
+//
+// Readability: card text must stay WCAG AA (4.5:1) over the worst case
+// behind it, which is a blob's center at full `blobOpacity` (blobs are
+// spaced so their centers never overlap). The base `tintOpacity` passes for
+// most conditions; `tintOpacityByCondition` raises it where it doesn't.
+// Re-check these if you change blobOpacity, a tint, or a condition color.
+export type Glass = {
+  // Card color laid over the blur.
+  tint: string;
+  // 0-1. Lower = more background shows through.
+  tintOpacity: number;
+  tintOpacityByCondition: Partial<Record<ConditionId, number>>;
+  // 1px edge; the top edge is brighter, like light catching glass.
+  border: string;
+  borderTop: string;
+  // iOS material that expo-blur adds on top of the blur.
+  blurTint: 'systemThinMaterialLight' | 'systemThinMaterialDark' | 'light' | 'dark' | 'default';
+  // expo-blur intensity, 1-100.
+  blurIntensity: number;
+  // Peak opacity of the condition-colored blobs behind the cards.
+  blobOpacity: number;
+};
+
 export type Theme = {
   name: ThemeName;
   colors: ThemeColors;
   statusBarStyle: 'dark' | 'light';
   cardBorderWidth: number;
+  // Null means solid cards and no blobs (also used when iOS Reduce
+  // Transparency is on).
+  glass: Glass | null;
   // Which of each condition's colors (in condition-profiles.ts) to use, or
   // 'accent' to use `colors.accent` for every condition.
   conditionColors: 'light' | 'dark' | 'accent';
@@ -91,6 +120,19 @@ export const lightTheme: Theme = {
   },
   statusBarStyle: 'dark',
   cardBorderWidth: 0,
+  glass: {
+    tint: palette.white,
+    tintOpacity: 0.5,
+    tintOpacityByCondition: {
+      // Ink blob: slate text is 4.45:1 at 0.5, 4.8:1 at 0.55.
+      'thunderstorm': 0.55,
+    },
+    border: withAlpha(palette.white, 0.4),
+    borderTop: withAlpha(palette.white, 0.8),
+    blurTint: 'systemThinMaterialLight',
+    blurIntensity: 55,
+    blobOpacity: 0.55,
+  },
   conditionColors: 'light',
 };
 
@@ -117,6 +159,27 @@ export const darkTheme: Theme = {
   },
   statusBarStyle: 'light',
   cardBorderWidth: 1,
+  glass: {
+    // The page navy (darker than navyCard) keeps light text readable over
+    // bright yellow and ice-blue blobs.
+    tint: darkPalette.navy,
+    tintOpacity: 0.5,
+    tintOpacityByCondition: {
+      // Yellow blobs: gray text is 4.58:1 at 0.5 (passes, barely), 5.0:1
+      // at 0.55. Raised for margin.
+      'clear': 0.55,
+      'partly-cloudy': 0.55,
+      'thunderstorm': 0.55,
+      'extreme-heat': 0.55,
+      // Ice-blue blob: gray text is 4.19:1 at 0.5 (fails), 5.0:1 at 0.6.
+      'snow': 0.6,
+    },
+    border: withAlpha(darkPalette.white, 0.25),
+    borderTop: withAlpha(darkPalette.white, 0.45),
+    blurTint: 'systemThinMaterialDark',
+    blurIntensity: 55,
+    blobOpacity: 0.55,
+  },
   conditionColors: 'dark',
 };
 
@@ -143,6 +206,8 @@ export const highContrastTheme: Theme = {
   },
   statusBarStyle: 'light',
   cardBorderWidth: 2,
+  // Solid cards and no blobs: nothing should reduce contrast.
+  glass: null,
   // Some condition colors (e.g. thunderstorm = ink) would vanish on an ink
   // background, so high contrast uses sun for every condition accent.
   conditionColors: 'accent',

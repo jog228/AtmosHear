@@ -2,9 +2,11 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { mostSignificant } from '@/constants/condition-priority';
-import { cardShadow, radius, spacing, type Theme } from '@/constants/theme';
+import { spacing, type Theme } from '@/constants/theme';
 import { useConditionColor, useTheme } from '@/hooks/use-theme';
 import type { CurrentWeather } from '@/services/weather-data';
+
+import { GlassCard } from './glass-card';
 
 type Detail = {
   label: string;
@@ -47,7 +49,7 @@ export function DetailCards({ current }: { current: CurrentWeather }) {
   return (
     <View style={styles.row}>
       {details.map((detail) => (
-        <View
+        <GlassCard
           key={detail.label}
           style={styles.card}
           accessible
@@ -56,7 +58,7 @@ export function DetailCards({ current }: { current: CurrentWeather }) {
           <SymbolView name={detail.icon} size={22} tintColor={accent} accessible={false} />
           <Text style={styles.value}>{detail.value}</Text>
           <Text style={styles.label}>{detail.label}</Text>
-        </View>
+        </GlassCard>
       ))}
     </View>
   );
@@ -76,8 +78,6 @@ function createStyles(theme: Theme) {
       gap: spacing.xs,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.xs,
-      borderRadius: radius.md,
-      ...cardShadow(theme),
     },
     value: {
       fontSize: 17,
