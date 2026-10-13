@@ -84,7 +84,7 @@ class AmbientSound {
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
       const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? FADE_IN_MS : VOLUME_CHANGE_MS;
-      this.fade(layer, layerVolume(id, volume, wanted.length), fadeMs, crossfading ? 'equalPower' : 'linear');
+      this.fade(layer, layerVolume(id, volume, wanted), fadeMs, crossfading ? 'equalPower' : 'linear');
     }
   }
 
@@ -99,7 +99,7 @@ class AmbientSound {
         // Skip if the app went to the background (or sound was turned off) meanwhile.
         if (!this.playing.includes(id)) return;
         layer.player.play();
-        this.fade(layer, layerVolume(id, this.volume, this.playing.length), FADE_IN_MS, 'linear');
+        this.fade(layer, layerVolume(id, this.volume, this.playing), FADE_IN_MS, 'linear');
       });
     }
   }
@@ -147,12 +147,23 @@ class AmbientSound {
   }
 }
 
-// The ambient volume, corrected for files that are louder than the rest and
-// lowered when layers stack, so a combination isn't louder than one sound:
-// about 71% each for two layers, 58% each for three.
-function layerVolume(id: ConditionId, volume: number, layerCount: number) {
-  const stackGain = 1 / Math.sqrt(Math.max(1, layerCount));
-  return volume * (conditionProfiles[id].soundVolume ?? 1) * stackGain;
+// A layer's volume: the ambient volume, corrected for files that are louder
+// than the rest, times its share of the mix.
+function layerVolume(id: ConditionId, volume: number, layers: ConditionId[]) {
+  const weights = layers.map((layer) => mixWeight(layer, layers));
+  // Stacked layers are lowered together so a combination isn't louder than
+  // one sound: about 71% each for two equal layers, 58% each for three.
+  const stackGain = 1 / Math.sqrt(weights.reduce((sum, w) => sum + w * w, 0) || 1);
+  return volume * (conditionProfiles[id].soundVolume ?? 1) * mixWeight(id, layers) * stackGain;
+}
+
+// 1 for a main layer. Supporting layers (like wind) get their
+// supportingVolume when any other sound is playing.
+function mixWeight(id: ConditionId, layers: ConditionId[]) {
+  const { supportingVolume, supportingVolumeWith = {} } = conditionProfiles[id];
+  const others = layers.filter((layer) => layer !== id);
+  if (supportingVolume === undefined || others.length === 0) return 1;
+  return Math.min(...others.map((other) => supportingVolumeWith[other] ?? supportingVolume));
 }
 
 export const ambientSound = new AmbientSound();

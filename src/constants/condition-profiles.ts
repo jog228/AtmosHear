@@ -19,6 +19,13 @@ export type ConditionProfile = {
   // Optional loudness correction for a file that's louder than the others
   // (0-1, default 1). Multiplies the ambient volume.
   soundVolume?: number;
+  // For background sounds like wind: when another condition's sound plays
+  // too, this one drops to this share of its solo level (0-1) so the main
+  // condition stays in front. Alone, it plays at full level.
+  supportingVolume?: number;
+  // Per-condition overrides of supportingVolume, e.g. quieter under snow.
+  // With several other sounds, the lowest applies.
+  supportingVolumeWith?: Partial<Record<ConditionId, number>>;
   // Filled in later steps: haptic pattern, light animation.
 };
 
@@ -98,8 +105,14 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Windy',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/10-wind.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    sound: require('../../assets/sounds/wind.m4a'),
+    // Meant to match clear, but the file measures -25.6 LUFS (1.7 LU louder).
+    soundVolume: 0.82,
+    // Wind is a supporting layer: half its solo level under other sounds.
+    supportingVolume: 0.5,
+    // Snow is the quietest sound and wind's low rumble covers it, so wind
+    // goes further down there (snow then stays louder in every frequency band).
+    supportingVolumeWith: { snow: 0.35 },
   },
   'extreme-heat': {
     label: 'Extreme heat',
