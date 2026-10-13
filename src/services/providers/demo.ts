@@ -1,4 +1,4 @@
-import type { ConditionId } from '@/constants/conditions';
+import { CONDITION_IDS, type ConditionId } from '@/constants/conditions';
 
 import { formatHour } from '../time';
 import type { HourlyForecast, WeatherData } from '../weather-data';
@@ -6,7 +6,9 @@ import type { HourlyForecast, WeatherData } from '../weather-data';
 const HOUR_MS = 60 * 60 * 1000;
 
 // Made-up weather, used when every live source and the saved copy are
-// unavailable. Defaults to an overlap (rain + wind) to show both at once.
+// unavailable. The current conditions default to an overlap (rain + wind).
+// The hourly row walks through the conditions in order (clear, partly
+// cloudy, overcast, ...), so the demo shows off a dozen of them at once.
 export function getDemoWeather(
   locationName: string,
   conditions: ConditionId[] = ['light-rain', 'wind'],
@@ -20,7 +22,7 @@ export function getDemoWeather(
     return {
       time: date.getTime(),
       hourLabel: formatHour(hour),
-      conditions,
+      conditions: [CONDITION_IDS[i % CONDITION_IDS.length]],
       isDay: hour >= 7 && hour < 19,
       temperature: 58 - Math.round(i / 2),
       rainChance: Math.max(20, 80 - i * 5),

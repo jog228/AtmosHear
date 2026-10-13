@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { describeConditions } from '@/constants/condition-profiles';
+import { mostSignificant } from '@/constants/condition-priority';
+import { conditionProfiles, describeConditions } from '@/constants/condition-profiles';
 import { cardShadow, radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { HourlyForecast as Hour } from '@/services/weather-data';
@@ -31,7 +32,8 @@ export function HourlyForecast({ hours }: { hours: Hour[] }) {
             accessibilityLabel={`${hour.hourLabel}, ${describeConditions(hour.conditions)}, ${hour.temperature} degrees, ${hour.rainChance} percent chance of rain`}
           >
             <Text style={styles.hour}>{hour.hourLabel}</Text>
-            <WeatherIcon condition={hour.conditions[0]} isDay={hour.isDay} size={28} />
+            <WeatherIcon conditions={hour.conditions} size={44} />
+            <Text style={styles.condition}>{conditionProfiles[mostSignificant(hour.conditions)].label}</Text>
             <Text style={styles.temperature}>{hour.temperature}°</Text>
             <Text style={styles.rain}>{hour.rainChance}%</Text>
           </View>
@@ -63,7 +65,7 @@ function createStyles(theme: Theme) {
     card: {
       alignItems: 'center',
       gap: spacing.sm,
-      minWidth: 68,
+      width: 96,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.sm,
       borderRadius: radius.md,
@@ -72,6 +74,11 @@ function createStyles(theme: Theme) {
     hour: {
       fontSize: 14,
       color: theme.colors.textSecondary,
+    },
+    condition: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
     },
     temperature: {
       fontSize: 17,

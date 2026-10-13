@@ -1,100 +1,99 @@
-import type { SymbolViewProps } from 'expo-symbols';
+import type { ImageProps } from 'expo-image';
 
+import { sortByPriority } from './condition-priority';
 import type { ConditionId } from './conditions';
 import { palette } from './theme';
 
-type SymbolName = SymbolViewProps['name'];
-
 export type ConditionProfile = {
   label: string;
-  // Main illustration and accent color.
+  // Accent color for this condition (e.g. the detail card icons).
   color: string;
-  // Optional second illustration color (iOS only; Android icons are one color).
-  secondaryColor?: string;
-  icon: SymbolName;
-  nightIcon?: SymbolName;
+  // 1024x1024 PNG from assets/icons/weather-icons. Must be a static
+  // require() so Expo bundles the file.
+  icon: ImageProps['source'];
   // Filled in later steps: sound file, haptic pattern, light animation.
 };
 
 // The single place that defines how each condition looks (and later sounds
 // and feels). To change a condition's color, swap the palette name below.
+// To change its icon, replace the PNG (same file name) or the require().
 export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'clear': {
     label: 'Clear',
     color: palette.sun,
-    icon: { ios: 'sun.max.fill', android: 'sunny', web: 'sunny' },
-    nightIcon: { ios: 'moon.stars.fill', android: 'bedtime', web: 'bedtime' },
+    icon: require('../../assets/icons/weather-icons/01-clear.png'),
   },
   'partly-cloudy': {
     label: 'Partly cloudy',
     color: palette.sun,
-    secondaryColor: palette.periwinkle,
-    icon: { ios: 'cloud.sun.fill', android: 'partly_cloudy_day', web: 'partly_cloudy_day' },
-    nightIcon: { ios: 'cloud.moon.fill', android: 'partly_cloudy_night', web: 'partly_cloudy_night' },
+    icon: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
   },
   'overcast': {
     label: 'Overcast',
     color: palette.gray,
-    icon: { ios: 'cloud.fill', android: 'cloud', web: 'cloud' },
+    icon: require('../../assets/icons/weather-icons/03-overcast.png'),
   },
   'light-rain': {
     label: 'Light rain',
     color: palette.periwinkle,
-    icon: { ios: 'cloud.drizzle.fill', android: 'rainy', web: 'rainy' },
+    icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
   },
   'heavy-rain': {
     label: 'Heavy rain',
     color: palette.deepBlue,
-    icon: { ios: 'cloud.heavyrain.fill', android: 'rainy_heavy', web: 'rainy_heavy' },
+    icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
   },
   'thunderstorm': {
     label: 'Thunderstorm',
     color: palette.ink,
-    icon: { ios: 'cloud.bolt.rain.fill', android: 'thunderstorm', web: 'thunderstorm' },
+    icon: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
   },
   'snow': {
     label: 'Snow',
     color: palette.deepBlue,
-    icon: { ios: 'cloud.snow.fill', android: 'weather_snowy', web: 'weather_snowy' },
+    icon: require('../../assets/icons/weather-icons/07-snow.png'),
   },
   'sleet': {
     label: 'Sleet',
     color: palette.deepBlue,
-    icon: { ios: 'cloud.sleet.fill', android: 'weather_mix', web: 'weather_mix' },
+    icon: require('../../assets/icons/weather-icons/08-sleet.png'),
   },
   'fog': {
     label: 'Fog',
     color: palette.gray,
-    icon: { ios: 'cloud.fog.fill', android: 'foggy', web: 'foggy' },
+    icon: require('../../assets/icons/weather-icons/09-fog.png'),
   },
   'wind': {
     label: 'Windy',
     color: palette.periwinkle,
-    icon: { ios: 'wind', android: 'air', web: 'air' },
+    icon: require('../../assets/icons/weather-icons/10-wind.png'),
   },
   'extreme-heat': {
     label: 'Extreme heat',
     // TODO: awaiting final color from design team.
     color: palette.sun,
-    icon: { ios: 'thermometer.sun.fill', android: 'thermostat', web: 'thermostat' },
+    icon: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
   },
   'extreme-cold': {
     label: 'Extreme cold',
     // TODO: awaiting final color from design team.
     color: palette.periwinkle,
-    icon: { ios: 'thermometer.snowflake', android: 'ac_unit', web: 'ac_unit' },
+    icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
   },
   'severe-alert': {
     label: 'Severe weather alert',
     // TODO: awaiting final color from design team.
     color: palette.deepBlue,
-    icon: { ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' },
+    icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
   },
 };
 
-// ['light-rain', 'wind'] -> "Light rain and windy"
+// ['wind', 'light-rain'] -> "Light rain and windy". Most significant first,
+// so the text always starts with the condition whose icon is shown.
 export function describeConditions(ids: ConditionId[]): string {
-  const labels = ids.map((id, i) => (i === 0 ? conditionProfiles[id].label : conditionProfiles[id].label.toLowerCase()));
+  const labels = sortByPriority(ids).map((id, i) =>
+    i === 0 ? conditionProfiles[id].label : conditionProfiles[id].label.toLowerCase(),
+  );
   if (labels.length <= 1) return labels.join('');
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }

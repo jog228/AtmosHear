@@ -1,8 +1,9 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { mostSignificant } from '@/constants/condition-priority';
 import { cardShadow, radius, spacing, type Theme } from '@/constants/theme';
-import { useConditionColors, useTheme } from '@/hooks/use-theme';
+import { useConditionColor, useTheme } from '@/hooks/use-theme';
 import type { CurrentWeather } from '@/services/weather-data';
 
 type Detail = {
@@ -14,7 +15,7 @@ type Detail = {
 
 export function DetailCards({ current }: { current: CurrentWeather }) {
   const styles = createStyles(useTheme());
-  const { primary } = useConditionColors(current.conditions[0]);
+  const accent = useConditionColor(mostSignificant(current.conditions));
 
   const details: Detail[] = [
     {
@@ -52,7 +53,7 @@ export function DetailCards({ current }: { current: CurrentWeather }) {
           accessible
           accessibilityLabel={`${detail.label}, ${detail.spoken}`}
         >
-          <SymbolView name={detail.icon} size={22} tintColor={primary} accessible={false} />
+          <SymbolView name={detail.icon} size={22} tintColor={accent} accessible={false} />
           <Text style={styles.value}>{detail.value}</Text>
           <Text style={styles.label}>{detail.label}</Text>
         </View>

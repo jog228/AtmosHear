@@ -1,4 +1,4 @@
-import { simulateOutage } from '@/constants/debug';
+import { demoConditions, forceDemo, simulateOutage } from '@/constants/debug';
 
 import type { Place } from './location';
 import { getDemoWeather } from './providers/demo';
@@ -15,6 +15,8 @@ const liveProviders = [
 // Fallback order: Open-Meteo → NWS → last saved forecast → demo data.
 // Always resolves, so the app always has something to show and play.
 export async function getWeather(place: Place): Promise<WeatherData> {
+  if (__DEV__ && forceDemo) return getDemoWeather(place.name, demoConditions);
+
   for (const provider of liveProviders) {
     try {
       if (__DEV__ && provider.simulateOutage) throw new Error('Simulated outage');

@@ -1,29 +1,24 @@
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 
+import { mostSignificant } from '@/constants/condition-priority';
 import { conditionProfiles } from '@/constants/condition-profiles';
 import type { ConditionId } from '@/constants/conditions';
-import { useConditionColors } from '@/hooks/use-theme';
 
 type Props = {
-  condition: ConditionId;
-  isDay?: boolean;
+  conditions: ConditionId[];
   size: number;
 };
 
-// Decorative: the condition name is always shown or spoken next to it.
-export function WeatherIcon({ condition, isDay = true, size }: Props) {
-  const profile = conditionProfiles[condition];
-  const { primary, secondary } = useConditionColors(condition);
-  const name = !isDay && profile.nightIcon ? profile.nightIcon : profile.icon;
+// Shows the most significant condition's icon. Decorative: the condition
+// name is always shown as text next to it.
+export function WeatherIcon({ conditions, size }: Props) {
+  const { icon } = conditionProfiles[mostSignificant(conditions)];
 
   return (
-    <SymbolView
-      name={name}
-      size={size}
-      tintColor={primary}
-      // Two-color icons on iOS: the cloud layer comes first, then the sun/moon.
-      type={secondary ? 'palette' : 'monochrome'}
-      colors={secondary ? [secondary, primary] : undefined}
+    <Image
+      source={icon}
+      style={{ width: size, height: size }}
+      contentFit="contain"
       accessible={false}
       importantForAccessibility="no"
     />

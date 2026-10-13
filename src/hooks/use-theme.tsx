@@ -48,10 +48,8 @@ export function useTheme(): Theme {
   return useThemeSettings().theme;
 }
 
-// The illustration colors for a condition in the current theme.
-export function useConditionColors(condition: ConditionId) {
+// A condition's accent color in the current theme.
+export function useConditionColor(condition: ConditionId): string {
   const theme = useTheme();
-  const profile = conditionProfiles[condition];
-  if (!theme.useConditionColors) return { primary: theme.colors.accent, secondary: undefined };
-  return { primary: profile.color, secondary: profile.secondaryColor };
+  return theme.useConditionColors ? conditionProfiles[condition].color : theme.colors.accent;
 }

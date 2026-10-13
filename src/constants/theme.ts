@@ -37,8 +37,8 @@ export type Theme = {
   colors: ThemeColors;
   statusBarStyle: 'dark' | 'light';
   cardBorderWidth: number;
-  // When false, every condition illustration uses `colors.accent` instead of
-  // its own color from condition-profiles.ts.
+  // When false, condition accents use `colors.accent` instead of each
+  // condition's own color from condition-profiles.ts.
   useConditionColors: boolean;
 };
 
@@ -78,7 +78,7 @@ export const highContrastTheme: Theme = {
   statusBarStyle: 'light',
   cardBorderWidth: 2,
   // Some condition colors (e.g. thunderstorm = ink) would vanish on an ink
-  // background, so high contrast uses sun for every illustration.
+  // background, so high contrast uses sun for every condition accent.
   useConditionColors: false,
 };
 
