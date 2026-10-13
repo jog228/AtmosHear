@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
 import { mostSignificant, sortByPriority } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
+import { useAlertSound } from '@/hooks/use-alert-sound';
 import { useConditionSound } from '@/hooks/use-condition-sound';
 import { useWeather } from '@/hooks/use-weather';
 
@@ -17,6 +18,9 @@ export default function HomeScreen() {
   const { state, reload, developerMode } = useWeather();
   // Every current condition with a sound plays as its own layer.
   const { replay } = useConditionSound(state.status === 'ready' ? sortByPriority(state.weather.current.conditions) : []);
+  // Severe alerts beep separately, over the conditions underneath them.
+  const alert = state.status === 'ready' ? state.weather.alert : undefined;
+  const { replay: replayAlert } = useAlertSound(alert);
 
   if (state.status === 'loading') return <LoadingState />;
   if (state.status === 'error') return <ErrorState onRetry={reload} />;
@@ -31,7 +35,7 @@ export default function HomeScreen() {
       ]}
     >
       <ScreenHeader place={place} weather={weather} developerMode={developerMode} />
-      <CurrentConditions current={weather.current} onReplay={replay} />
+      <CurrentConditions current={weather.current} alertActive={!!alert} onReplay={alert ? replayAlert : replay} />
       {/* Only cards go in the backdrop: page text can't sit on the blobs, so
           they spread sideways to the screen edges but never up. */}
       <GlassBackdrop

@@ -57,8 +57,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Light rain',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // Intentionally a step softer than heavy rain (-33.5 LUFS vs heavy
+    // rain's -24.2 after its correction). Don't normalize it.
+    sound: require('../../assets/sounds/light-rain.m4a'),
   },
   'heavy-rain': {
     label: 'Heavy rain',
@@ -110,9 +111,10 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     soundVolume: 0.82,
     // Wind is a supporting layer: half its solo level under other sounds.
     supportingVolume: 0.5,
-    // Snow is the quietest sound and wind's low rumble covers it, so wind
-    // goes further down there (snow then stays louder in every frequency band).
-    supportingVolumeWith: { snow: 0.35 },
+    // Wind's low rumble covers quiet sounds, so it goes further down under
+    // them. Under snow, snow stays louder in every frequency band; under
+    // light rain (the quietest sound), the rain stays about 6 LU in front.
+    supportingVolumeWith: { 'snow': 0.35, 'light-rain': 0.25 },
   },
   'extreme-heat': {
     label: 'Extreme heat',
@@ -135,7 +137,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
-    // TODO: awaiting sound from teammate.
+    // No ambient loop: the alert beeps instead (src/constants/alert-sound.ts),
+    // then the conditions underneath it keep playing.
     sound: null,
   },
 };

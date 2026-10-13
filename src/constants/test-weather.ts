@@ -20,6 +20,8 @@ export type TestWeather = {
   // The next 12 hours, as [conditions, number of hours] segments that add up
   // to 12. Each hour's rain chance comes from its conditions.
   forecast: [ConditionId[], number][];
+  // A severe weather alert to show with this weather (its name).
+  alert?: string;
 };
 
 export const TEST_WEATHER: TestWeather[] = [
@@ -60,7 +62,8 @@ export const TEST_WEATHER: TestWeather[] = [
   { id: 'extreme-cold', label: 'Extreme cold', group: 'Conditions', conditions: ['extreme-cold'],
     temperature: 2, feelsLike: -14, humidity: 65, windSpeed: 14, rainChance: 5, dailySwing: 5,
     forecast: [[['extreme-cold'], 9], [['clear', 'extreme-cold'], 3]] },
-  { id: 'severe-alert', label: 'Severe alert', group: 'Conditions', conditions: ['severe-alert'],
+  { id: 'severe-alert', label: 'Severe alert', group: 'Conditions', conditions: ['severe-alert', 'thunderstorm', 'heavy-rain'],
+    alert: 'Severe Thunderstorm Warning',
     temperature: 79, feelsLike: 84, humidity: 82, windSpeed: 32, rainChance: 90, dailySwing: 4,
     forecast: [[['severe-alert'], 3], [['thunderstorm'], 3], [['heavy-rain'], 3], [['overcast'], 3]] },
 

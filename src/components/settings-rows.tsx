@@ -118,6 +118,41 @@ export function ValueRow({ label, value, onPress, divider }: { label: string; va
   );
 }
 
+// A row that does something right away, like a button.
+export function ActionRow({
+  label,
+  description,
+  accessibilityHint,
+  onPress,
+  divider,
+}: {
+  label: string;
+  description?: string;
+  accessibilityHint?: string;
+  onPress: () => void;
+  divider?: boolean;
+}) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, divider && styles.divider, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
+    >
+      <RowText label={label} description={description} />
+      <SymbolView
+        name={{ ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }}
+        size={16}
+        tintColor={theme.colors.textSecondary}
+        accessible={false}
+      />
+    </Pressable>
+  );
+}
+
 function RowText({ label, description }: { label: string; description?: string }) {
   const styles = createStyles(useTheme());
   return (
@@ -149,6 +184,9 @@ function createStyles(theme: Theme) {
       gap: spacing.md,
       minHeight: 56,
       padding: spacing.md,
+    },
+    pressed: {
+      opacity: 0.6,
     },
     divider: {
       borderTopWidth: StyleSheet.hairlineWidth,

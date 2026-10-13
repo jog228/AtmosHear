@@ -53,6 +53,8 @@ export function getDemoWeather(
       rainChance: option.rainChance,
     },
     hourly,
+    // A fresh ID each time, so picking this test weather always beeps.
+    alert: option.alert ? { id: `test-${option.id}-${now}`, name: option.alert } : undefined,
   };
 }
 

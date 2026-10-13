@@ -28,6 +28,14 @@ export type HourlyForecast = {
   rainChance: number;
 };
 
+export type WeatherAlert = {
+  // Must stay the same for the whole life of one alert (NWS alert IDs do),
+  // so the alert only beeps once.
+  id: string;
+  // e.g. "Severe Thunderstorm Warning".
+  name: string;
+};
+
 export type WeatherData = {
   source: WeatherSource;
   locationName: string;
@@ -35,4 +43,7 @@ export type WeatherData = {
   updatedAt: number;
   current: CurrentWeather;
   hourly: HourlyForecast[];
+  // The most important active severe weather alert, if any. Only test
+  // weather sets this until NWS alert fetching is built.
+  alert?: WeatherAlert;
 };

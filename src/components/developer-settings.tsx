@@ -8,11 +8,13 @@ import { getTestWeatherOption } from '@/constants/test-weather';
 import { spacing, type Theme } from '@/constants/theme';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useReduceTransparency } from '@/hooks/use-reduce-transparency';
+import { announceAlert } from '@/hooks/use-alert-sound';
 import { useTheme } from '@/hooks/use-theme';
+import { alertSound } from '@/services/alert-sound';
 import type { DevWeatherSource } from '@/services/preferences';
 
 import { GlassCard } from './glass-card';
-import { OptionGroup, SettingsSection, SwitchRow, ValueRow } from './settings-rows';
+import { ActionRow, OptionGroup, SettingsSection, SwitchRow, ValueRow } from './settings-rows';
 
 const SOURCE_OPTIONS: { value: DevWeatherSource; label: string; description: string }[] = [
   { value: 'test', label: 'Test weather', description: 'Filler data, no internet needed' },
@@ -51,6 +53,15 @@ export function DeveloperSettings() {
               />
             </>
           )}
+          {developerMode && (
+            <ActionRow
+              label="Replay alert"
+              description="Plays the severe alert beeps, even with ambient sound off."
+              accessibilityHint="Plays the severe weather alert sound three times"
+              onPress={() => alertSound.play(() => option.alert && announceAlert(option.alert))}
+              divider
+            />
+          )}
         </GlassCard>
       </SettingsSection>
 
@@ -62,7 +73,9 @@ export function DeveloperSettings() {
             onSelect={(value) => updatePreferences({ devWeatherSource: value })}
           />
           <Text style={styles.info}>
-            {devWeatherSource === 'test' ? `${option.id} · sound: ${soundStatus(option.conditions, ambientSound)}` : 'Live weather, no test data'}
+            {devWeatherSource === 'test'
+              ? `${option.id} · sound: ${soundStatus(option.conditions, ambientSound)}${option.alert ? ' · alert: severe-alert.m4a' : ''}`
+              : 'Live weather, no test data'}
           </Text>
           <Text style={styles.info}>Reduce Transparency: {reduceTransparency ? 'on' : 'off'}</Text>
         </SettingsSection>

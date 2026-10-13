@@ -1,5 +1,6 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 
+import { ALERT_DUCK_VOLUME } from '@/constants/alert-sound';
 import { conditionProfiles } from '@/constants/condition-profiles';
 import type { ConditionId } from '@/constants/conditions';
 
@@ -12,6 +13,8 @@ const CROSSFADE_MS = 1000; // condition changes
 const TURN_OFF_MS = 300; // Settings toggle off
 const VOLUME_CHANGE_MS = 500; // screen reader turned on/off
 const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
+const DUCK_MS = 200; // severe alert starting
+const UNDUCK_MS = 1000; // severe alert finished
 
 export type AmbientState = {
   // Conditions to play, most significant first. Each one with a sound
@@ -33,6 +36,7 @@ class AmbientSound {
   private layers = new Map<ConditionId, Layer>();
   private playing: ConditionId[] = [];
   private volume = AMBIENT_VOLUME;
+  private ducked = false;
 
   // Plays even with the ringer switch on silent: only the volume buttons
   // and the in-app toggle control it. Other apps' audio keeps playing.
@@ -84,7 +88,7 @@ class AmbientSound {
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
       const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? FADE_IN_MS : VOLUME_CHANGE_MS;
-      this.fade(layer, layerVolume(id, volume, wanted), fadeMs, crossfading ? 'equalPower' : 'linear');
+      this.fade(layer, this.targetVolume(id), fadeMs, crossfading ? 'equalPower' : 'linear');
     }
   }
 
@@ -99,9 +103,23 @@ class AmbientSound {
         // Skip if the app went to the background (or sound was turned off) meanwhile.
         if (!this.playing.includes(id)) return;
         layer.player.play();
-        this.fade(layer, layerVolume(id, this.volume, this.playing), FADE_IN_MS, 'linear');
+        this.fade(layer, this.targetVolume(id), FADE_IN_MS, 'linear');
       });
     }
+  }
+
+  // Lowers every layer while a severe alert plays, then brings them back.
+  setDucked(ducked: boolean) {
+    if (ducked === this.ducked) return;
+    this.ducked = ducked;
+    for (const id of this.playing) {
+      const layer = this.layers.get(id);
+      if (layer) this.fade(layer, this.targetVolume(id), ducked ? DUCK_MS : UNDUCK_MS, 'linear');
+    }
+  }
+
+  private targetVolume(id: ConditionId) {
+    return layerVolume(id, this.volume, this.playing) * (this.ducked ? ALERT_DUCK_VOLUME : 1);
   }
 
   // Stops and frees everything (e.g. when the screen unmounts).
