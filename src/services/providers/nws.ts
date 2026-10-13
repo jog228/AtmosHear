@@ -10,7 +10,7 @@ import type { CurrentWeather, HourlyForecast, WeatherData } from '../weather-dat
 // Docs: https://www.weather.gov/documentation/services-web-api
 const BASE_URL = 'https://api.weather.gov';
 const HEADERS = {
-  'User-Agent': 'ImmersiveWeather/1.0 (DES 156 class project)',
+  'User-Agent': 'AtmosHear/1.0 (DES 156 class project)',
   Accept: 'application/geo+json',
 };
 const HOURS_AHEAD = 12;

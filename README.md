@@ -1,6 +1,8 @@
-# Welcome to your Expo app 👋
+# AtmosHear
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Weather you can hear and feel.
+
+AtmosHear is a multi-sensory weather app for a DES 156 class project. Each weather condition has its own sound, vibration pattern, and color, so the forecast can be understood without looking at the screen. It's built with [Expo](https://expo.dev) and was created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
 

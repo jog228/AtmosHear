@@ -20,8 +20,8 @@ export function ScreenHeader({ place, weather }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">
-        Immersive Weather
+      <Text style={styles.title} accessibilityRole="header" accessibilityLabel="AtmosHear">
+        AtmosHear
       </Text>
       <Text style={styles.location}>{weather.locationName}</Text>
       {place.isFallback && (

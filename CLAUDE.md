@@ -2,6 +2,10 @@
 
 # Project context
 
+**AtmosHear** — Weather you can hear and feel.
+
+Always write the name as "AtmosHear" (capital A, capital H). The slug, scheme, and package name stay `immersive-weather` / `immersiveweather` so the Expo project link doesn't break.
+
 Multi-sensory weather app for a DES 156 class project, due 10/29/2026. This is the author's first mobile app: build in small steps and briefly explain each one.
 
 ## Concept
