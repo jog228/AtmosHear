@@ -1,8 +1,9 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { cardShadow, colors, radius, spacing } from '@/constants/theme';
-import type { CurrentWeather } from '@/services/weather';
+import { cardShadow, radius, spacing, type Theme } from '@/constants/theme';
+import { useConditionColors, useTheme } from '@/hooks/use-theme';
+import type { CurrentWeather } from '@/services/weather-data';
 
 type Detail = {
   label: string;
@@ -11,12 +12,10 @@ type Detail = {
   icon: SymbolViewProps['name'];
 };
 
-type Props = {
-  current: CurrentWeather;
-  accent: string;
-};
+export function DetailCards({ current }: { current: CurrentWeather }) {
+  const styles = createStyles(useTheme());
+  const { primary } = useConditionColors(current.conditions[0]);
 
-export function DetailCards({ current, accent }: Props) {
   const details: Detail[] = [
     {
       label: 'Wind',
@@ -53,7 +52,7 @@ export function DetailCards({ current, accent }: Props) {
           accessible
           accessibilityLabel={`${detail.label}, ${detail.spoken}`}
         >
-          <SymbolView name={detail.icon} size={22} tintColor={accent} accessible={false} />
+          <SymbolView name={detail.icon} size={22} tintColor={primary} accessible={false} />
           <Text style={styles.value}>{detail.value}</Text>
           <Text style={styles.label}>{detail.label}</Text>
         </View>
@@ -62,31 +61,32 @@ export function DetailCards({ current, accent }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  card: {
-    flexGrow: 1,
-    flexBasis: 72,
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    ...cardShadow,
-  },
-  value: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  label: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    card: {
+      flexGrow: 1,
+      flexBasis: 72,
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xs,
+      borderRadius: radius.md,
+      ...cardShadow(theme),
+    },
+    value: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
+    },
+    label: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

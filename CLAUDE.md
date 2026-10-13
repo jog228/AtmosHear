@@ -11,7 +11,7 @@ Each weather condition has its own sound, vibration pattern, and color so users 
 ## Stack
 
 - Expo + TypeScript + Expo Router (routes in `src/app`).
-- Weather from Open-Meteo (no API key). Severe alerts from the NWS API later.
+- Weather: Open-Meteo first, then the NWS API as backup, then the last saved forecast, then demo data (`src/services/weather.ts`). Every provider in `src/services/providers/` returns the shared `WeatherData` type (`src/services/weather-data.ts`); the rest of the app only uses that type. NWS requests must send a User-Agent header. Severe alerts from the NWS API later.
 - `expo-location`, `expo-audio`, `@react-native-async-storage/async-storage`.
 - Custom haptics come later via `react-native-haptic-feedback`, which needs a dev build. Until then, everything must run in Expo Go.
 

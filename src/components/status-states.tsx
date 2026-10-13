@@ -1,17 +1,23 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/constants/theme';
+import { radius, spacing, type Theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export function LoadingState() {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.container} accessible accessibilityLabel="Loading the weather">
-      <ActivityIndicator size="large" color={colors.textMuted} />
+      <ActivityIndicator size="large" color={theme.colors.accent} />
       <Text style={styles.message}>Checking the sky…</Text>
     </View>
   );
 }
 
 export function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const styles = createStyles(useTheme());
+
   return (
     <View style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">
@@ -31,38 +37,40 @@ export function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 17,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  button: {
-    minHeight: 56,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.pill,
-    backgroundColor: colors.text,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  buttonLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.card,
-  },
-});
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.md,
+      padding: spacing.lg,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.colors.heading,
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: 17,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+    },
+    button: {
+      minHeight: 56,
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.pill,
+      backgroundColor: theme.colors.buttonBackground,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    buttonLabel: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: theme.colors.buttonText,
+    },
+  });
+}

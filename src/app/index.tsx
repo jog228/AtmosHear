@@ -7,7 +7,6 @@ import { HourlyForecast } from '@/components/hourly-forecast';
 import { PlayButton } from '@/components/play-button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
-import { conditionProfiles } from '@/constants/condition-profiles';
 import { spacing } from '@/constants/theme';
 import { useWeather } from '@/hooks/use-weather';
 
@@ -19,7 +18,6 @@ export default function HomeScreen() {
   if (state.status === 'error') return <ErrorState onRetry={reload} />;
 
   const { place, weather } = state;
-  const accent = conditionProfiles[weather.current.condition].color;
 
   return (
     <ScrollView
@@ -28,11 +26,11 @@ export default function HomeScreen() {
         { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
       ]}
     >
-      <ScreenHeader place={place} />
+      <ScreenHeader place={place} weather={weather} />
       <CurrentConditions current={weather.current} />
       {/* Placeholder: sound and haptics are added in a later step. */}
-      <PlayButton color={accent} onPress={() => {}} />
-      <DetailCards current={weather.current} accent={accent} />
+      <PlayButton onPress={() => {}} />
+      <DetailCards current={weather.current} />
       <HourlyForecast hours={weather.hourly} />
     </ScrollView>
   );

@@ -1,0 +1,37 @@
+import type { ConditionId } from '@/constants/conditions';
+
+// The one weather shape the app uses. Every provider (Open-Meteo, NWS, demo)
+// converts its own response into this. Units: °F, mph, percent.
+
+export type WeatherSource = 'open-meteo' | 'nws' | 'cache' | 'demo';
+
+export type CurrentWeather = {
+  // Most important first, e.g. ['light-rain', 'wind'].
+  conditions: ConditionId[];
+  isDay: boolean;
+  temperature: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
+  rainChance: number;
+};
+
+export type HourlyForecast = {
+  // Start of the hour, in milliseconds since 1970 (like Date.now()).
+  time: number;
+  // e.g. "3 PM", in the forecast location's time zone.
+  hourLabel: string;
+  conditions: ConditionId[];
+  isDay: boolean;
+  temperature: number;
+  rainChance: number;
+};
+
+export type WeatherData = {
+  source: WeatherSource;
+  locationName: string;
+  // When this data was fetched, in milliseconds since 1970.
+  updatedAt: number;
+  current: CurrentWeather;
+  hourly: HourlyForecast[];
+};

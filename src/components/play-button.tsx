@@ -1,26 +1,25 @@
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors, radius, spacing } from '@/constants/theme';
+import { radius, spacing, type Theme } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
-type Props = {
-  color: string;
-  onPress: () => void;
-};
+export function PlayButton({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
-export function PlayButton({ color, onPress }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="Play weather"
       accessibilityHint="Plays the sound and vibration for the current weather"
-      style={({ pressed }) => [styles.button, { backgroundColor: color, opacity: pressed ? 0.85 : 1 }]}
+      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >
       <SymbolView
         name={{ ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }}
         size={24}
-        tintColor={colors.onAccent}
+        tintColor={theme.colors.buttonText}
         accessible={false}
       />
       <Text style={styles.label}>Play weather</Text>
@@ -28,20 +27,26 @@ export function PlayButton({ color, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    minHeight: 64,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.pill,
-    alignSelf: 'stretch',
-  },
-  label: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.onAccent,
-  },
-});
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      minHeight: 64,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.pill,
+      alignSelf: 'stretch',
+      backgroundColor: theme.colors.buttonBackground,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    label: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: theme.colors.buttonText,
+    },
+  });
+}
