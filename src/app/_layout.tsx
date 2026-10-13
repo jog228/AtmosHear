@@ -2,16 +2,19 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
+import { PreferencesProvider } from '@/hooks/use-preferences';
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
 
-// ThemeProvider hides the splash screen once the saved theme has loaded.
+// ThemeProvider hides the splash screen once the saved settings have loaded.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <ThemedStack />
-    </ThemeProvider>
+    <PreferencesProvider>
+      <ThemeProvider>
+        <ThemedStack />
+      </ThemeProvider>
+    </PreferencesProvider>
   );
 }
 

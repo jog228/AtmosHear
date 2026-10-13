@@ -1,3 +1,4 @@
+import type { AudioSource } from 'expo-audio';
 import type { ImageProps } from 'expo-image';
 
 import { sortByPriority } from './condition-priority';
@@ -12,7 +13,10 @@ export type ConditionProfile = {
   // 1024x1024 PNG from assets/icons/weather-icons. Must be a static
   // require() so Expo bundles the file.
   icon: ImageProps['source'];
-  // Filled in later steps: sound file, haptic pattern, light animation.
+  // Looping ambient sound from assets/sounds, or null for silence. Must be a
+  // static require() so Expo bundles the file.
+  sound: AudioSource | null;
+  // Filled in later steps: haptic pattern, light animation.
 };
 
 // The single place that defines how each condition looks (and later sounds
@@ -23,69 +27,94 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Clear',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/01-clear.png'),
+    sound: require('../../assets/sounds/clear.m4a'),
   },
   'partly-cloudy': {
     label: 'Partly cloudy',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'overcast': {
     label: 'Overcast',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/03-overcast.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'light-rain': {
     label: 'Light rain',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'heavy-rain': {
     label: 'Heavy rain',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'thunderstorm': {
     label: 'Thunderstorm',
     color: { light: palette.ink, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'snow': {
     label: 'Snow',
     color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
     icon: require('../../assets/icons/weather-icons/07-snow.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'sleet': {
     label: 'Sleet',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/08-sleet.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'fog': {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/09-fog.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'wind': {
     label: 'Windy',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/10-wind.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'extreme-heat': {
     label: 'Extreme heat',
     // TODO: awaiting final color from design team.
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'extreme-cold': {
     label: 'Extreme cold',
     // TODO: awaiting final color from design team.
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
   'severe-alert': {
     label: 'Severe weather alert',
     // TODO: awaiting final color from design team.
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
+    // TODO: awaiting sound from teammate.
+    sound: null,
   },
 };
 

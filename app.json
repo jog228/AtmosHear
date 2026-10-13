@@ -42,7 +42,16 @@
           }
         }
       ],
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

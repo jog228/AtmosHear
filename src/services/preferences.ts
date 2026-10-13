@@ -5,38 +5,45 @@ export type Appearance = 'system' | 'light' | 'dark';
 export type Preferences = {
   appearance: Appearance;
   highContrast: boolean;
+  ambientSound: boolean;
 };
 
-const APPEARANCE_KEY = 'preferences.appearance';
-const HIGH_CONTRAST_KEY = 'preferences.highContrast';
+const KEYS: Record<keyof Preferences, string> = {
+  appearance: 'preferences.appearance',
+  highContrast: 'preferences.highContrast',
+  ambientSound: 'preferences.ambientSound',
+};
+
+const DEFAULTS: Preferences = {
+  appearance: 'system',
+  highContrast: false,
+  ambientSound: true,
+};
 
 export async function loadPreferences(): Promise<Preferences> {
   try {
-    const [appearance, highContrast] = await Promise.all([
-      AsyncStorage.getItem(APPEARANCE_KEY),
-      AsyncStorage.getItem(HIGH_CONTRAST_KEY),
+    const [appearance, highContrast, ambientSound] = await Promise.all([
+      AsyncStorage.getItem(KEYS.appearance),
+      AsyncStorage.getItem(KEYS.highContrast),
+      AsyncStorage.getItem(KEYS.ambientSound),
     ]);
     return {
-      appearance: appearance === 'light' || appearance === 'dark' ? appearance : 'system',
+      appearance: appearance === 'light' || appearance === 'dark' ? appearance : DEFAULTS.appearance,
       highContrast: highContrast === 'true',
+      // On unless the user turned it off.
+      ambientSound: ambientSound !== 'false',
     };
   } catch {
-    return { appearance: 'system', highContrast: false };
+    return DEFAULTS;
   }
 }
 
-export async function saveAppearance(appearance: Appearance): Promise<void> {
-  await save(APPEARANCE_KEY, appearance);
-}
-
-export async function saveHighContrast(enabled: boolean): Promise<void> {
-  await save(HIGH_CONTRAST_KEY, String(enabled));
-}
-
-async function save(key: string, value: string): Promise<void> {
+export async function savePreferences(changes: Partial<Preferences>): Promise<void> {
   try {
-    await AsyncStorage.setItem(key, value);
+    await AsyncStorage.multiSet(
+      Object.entries(changes).map(([key, value]) => [KEYS[key as keyof Preferences], String(value)]),
+    );
   } catch (error) {
-    console.warn(`Failed to save ${key}`, error);
+    console.warn('Failed to save preferences', error);
   }
 }

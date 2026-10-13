@@ -10,11 +10,15 @@ import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
 import { mostSignificant } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
+import { useConditionSound } from '@/hooks/use-condition-sound';
 import { useWeather } from '@/hooks/use-weather';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, reload } = useWeather();
+  // Only the most significant condition plays for now. To layer sounds
+  // (e.g. rain + wind), pass all of weather.current.conditions instead.
+  useConditionSound(state.status === 'ready' ? [mostSignificant(state.weather.current.conditions)] : []);
 
   if (state.status === 'loading') return <LoadingState />;
   if (state.status === 'error') return <ErrorState onRetry={reload} />;

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-nat
 import { GlassBackdrop } from '@/components/glass-backdrop';
 import { GlassCard } from '@/components/glass-card';
 import { spacing, type Theme } from '@/constants/theme';
+import { usePreferences } from '@/hooks/use-preferences';
 import { useReduceTransparency } from '@/hooks/use-reduce-transparency';
 import { useThemeSettings } from '@/hooks/use-theme';
 import type { Appearance } from '@/services/preferences';
@@ -18,6 +19,9 @@ export default function SettingsScreen() {
   const { theme, appearance, setAppearance, highContrast, setHighContrast } = useThemeSettings();
   const styles = createStyles(theme);
   const reduceTransparency = useReduceTransparency();
+  const { preferences, updatePreferences } = usePreferences();
+  const ambientSound = preferences.ambientSound;
+  const setAmbientSound = (value: boolean) => updatePreferences({ ambientSound: value });
 
   return (
     <GlassBackdrop style={styles.screen}>
@@ -62,6 +66,38 @@ export default function SettingsScreen() {
           {highContrast && (
             <Text style={styles.note}>High contrast is on, so it’s used instead of this setting.</Text>
           )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Sound
+          </Text>
+          <GlassCard>
+            <Pressable
+              style={styles.row}
+              onPress={() => setAmbientSound(!ambientSound)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: ambientSound }}
+              accessibilityLabel="Ambient weather sound"
+              accessibilityHint="Plays a quiet looping sound for the current weather while the app is open"
+            >
+              <View style={styles.text}>
+                <Text style={styles.label}>Ambient sound</Text>
+                <Text style={styles.description}>
+                  A quiet looping sound for the current weather. Follows your silent switch.
+                </Text>
+              </View>
+              <Switch
+                value={ambientSound}
+                onValueChange={setAmbientSound}
+                trackColor={{ false: theme.colors.switchTrackOff, true: theme.colors.switchTrackOn }}
+                ios_backgroundColor={theme.colors.switchTrackOff}
+                thumbColor={theme.colors.switchThumb}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+              />
+            </Pressable>
+          </GlassCard>
         </View>
 
         <View style={styles.section}>
