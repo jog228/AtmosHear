@@ -71,8 +71,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Snow',
     color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
     icon: require('../../assets/icons/weather-icons/07-snow.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // Intentionally a bit softer to feel hushed (-28.3 LUFS vs clear's
+    // -27.3). Don't normalize it up.
+    sound: require('../../assets/sounds/snow.m4a'),
   },
   'sleet': {
     label: 'Sleet',
