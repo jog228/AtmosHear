@@ -99,8 +99,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/09-fog.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // A low, airy drone, meant to sit soft. Measures -27.3 LUFS (same as
+    // clear), so no correction. Don't normalize it up.
+    sound: require('../../assets/sounds/fog.m4a'),
   },
   'wind': {
     label: 'Windy',
