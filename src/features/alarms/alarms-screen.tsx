@@ -83,7 +83,8 @@ export function AlarmsScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* iOS keeps the list clear of the tab bar. */}
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
         <Text style={styles.title} accessibilityRole="header">
           Alarms
         </Text>

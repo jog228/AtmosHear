@@ -1,5 +1,5 @@
 import { usePathname } from 'expo-router';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CurrentConditions } from '@/components/current-conditions';
@@ -40,9 +40,17 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      // On iOS the system adds the status bar and the tab bar to the scroll
+      // insets. Set explicitly: the tabs only turn this on automatically for
+      // the first scroll view they find, and this one only appears after the
+      // loading state. Android gets the same space as padding.
+      contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+        {
+          paddingTop: (IOS ? 0 : insets.top) + spacing.md,
+          paddingBottom: (IOS ? 0 : insets.bottom) + spacing.xl,
+        },
       ]}
     >
       <ScreenHeader place={place} weather={weather} developerMode={developerMode} />
@@ -71,6 +79,8 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
+const IOS = Platform.OS === 'ios';
 
 const styles = StyleSheet.create({
   content: {

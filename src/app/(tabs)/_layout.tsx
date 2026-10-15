@@ -18,11 +18,12 @@ export default function TabsLayout() {
         selected: { color: colors.buttonBackground },
       }}
     >
-      <NativeTabs.Trigger name="index">
+      {/* Each tab paints our page background, never the navigator's default. */}
+      <NativeTabs.Trigger name="index" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Icon sf={{ default: 'cloud.sun', selected: 'cloud.sun.fill' }} md="partly_cloudy_day" />
         <NativeTabs.Trigger.Label>Weather</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="alarms">
+      <NativeTabs.Trigger name="alarms" contentStyle={{ backgroundColor: colors.background }}>
         <NativeTabs.Trigger.Icon sf={{ default: 'alarm', selected: 'alarm.fill' }} md="alarm" />
         <NativeTabs.Trigger.Label>Alarms</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
