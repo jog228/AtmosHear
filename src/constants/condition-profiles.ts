@@ -133,8 +133,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // A sharp ice crack once per second, so the 4-second loop must stay
+    // exactly 4.000 s. Measures -28.0 LUFS; don't normalize it.
+    sound: require('../../assets/sounds/extreme-cold.m4a'),
   },
   'severe-alert': {
     label: 'Severe weather alert',
