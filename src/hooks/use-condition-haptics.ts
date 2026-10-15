@@ -21,9 +21,14 @@ export function useConditionHaptics(conditions: ConditionId[], alertActive: bool
   const key = conditions.join(',');
   const lastKey = useRef('');
   useEffect(() => {
-    // Ignore the empty list while reloading, so the same weather coming
-    // back doesn't count as a change.
-    if (!key || key === lastKey.current) return;
+    // An empty list (loading, or another tab is showing) stops a pattern
+    // mid-way, but doesn't count as a change: the same weather coming back
+    // doesn't vibrate again.
+    if (!key) {
+      hapticPlayer.cancelConditionPattern();
+      return;
+    }
+    if (key === lastKey.current) return;
     lastKey.current = key;
     if (enabled && foreground && !alertActive) {
       hapticPlayer.play(conditionPatterns(key.split(',') as ConditionId[]));

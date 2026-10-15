@@ -1,4 +1,6 @@
+import { useCalendars } from 'expo-localization';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
 import { sortByPriority } from '@/constants/condition-priority';
@@ -6,6 +8,9 @@ import { conditionProfiles } from '@/constants/condition-profiles';
 import type { ConditionId } from '@/constants/conditions';
 import { getTestWeatherOption } from '@/constants/test-weather';
 import { spacing, type Theme } from '@/constants/theme';
+import { formatClockTime } from '@/features/preferences/opening-time';
+import { TimePickerSheet } from '@/features/preferences/time-picker-sheet';
+import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useReduceTransparency } from '@/hooks/use-reduce-transparency';
 import { announceAlert } from '@/hooks/use-alert-sound';
@@ -31,6 +36,11 @@ export function DeveloperSettings() {
   const reduceTransparency = useReduceTransparency();
   const { developerMode, devWeatherSource, testWeather, autoCycle, ambientSound } = preferences;
   const option = getTestWeatherOption(testWeather);
+  const opening = useOpeningPreferences();
+  const uses24Hour = useCalendars()[0]?.uses24hourClock ?? false;
+  // The "Simulate time" sheet; a new key each time it opens.
+  const [simulating, setSimulating] = useState(false);
+  const [sheetKey, setSheetKey] = useState(0);
 
   return (
     <>
@@ -63,6 +73,17 @@ export function DeveloperSettings() {
               divider
             />
           )}
+          {developerMode && (
+            <ValueRow
+              label="Simulate time"
+              value={opening.simulatedTime ? formatClockTime(opening.simulatedTime, uses24Hour) : 'Off'}
+              onPress={() => {
+                setSheetKey((key) => key + 1);
+                setSimulating(true);
+              }}
+              divider
+            />
+          )}
           {developerMode && devWeatherSource === 'test' && (
             <ActionRow
               label="Test vibration"
@@ -74,6 +95,29 @@ export function DeveloperSettings() {
           )}
         </GlassCard>
       </SettingsSection>
+
+      <TimePickerSheet
+        key={sheetKey}
+        visible={simulating}
+        title="Simulate time"
+        initial={opening.simulatedTime ?? { hour: new Date().getHours(), minute: new Date().getMinutes() }}
+        onSave={(time) => {
+          opening.update({ simulatedTime: time });
+          setSimulating(false);
+        }}
+        onClose={() => setSimulating(false)}
+        extraAction={
+          opening.simulatedTime
+            ? {
+                label: 'Use real time',
+                onPress: () => {
+                  opening.update({ simulatedTime: null });
+                  setSimulating(false);
+                },
+              }
+            : undefined
+        }
+      />
 
       {developerMode && (
         <SettingsSection title="Weather source">

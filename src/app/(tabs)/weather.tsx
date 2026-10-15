@@ -18,9 +18,10 @@ import { useWeather } from '@/hooks/use-weather';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, reload, developerMode } = useWeather();
-  // Weather sound and vibration stop on the Alarms tab (the sound fades
+  // Weather sound and vibration stop on the other tabs (the sound fades
   // out, then back in on return). Settings, opened from here, keeps them.
-  const onWeatherTab = usePathname() !== '/alarms';
+  const pathname = usePathname();
+  const onWeatherTab = pathname !== '/alarms' && pathname !== '/preferences';
   const conditions = state.status === 'ready' && onWeatherTab ? state.weather.current.conditions : [];
   // Every current condition with a sound plays as its own layer.
   const { replay } = useConditionSound(sortByPriority(conditions));

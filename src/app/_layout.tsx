@@ -7,9 +7,11 @@ import {
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import type { ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { PreferencesProvider } from '@/hooks/use-preferences';
+import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
+import { PreferencesProvider, usePreferences } from '@/hooks/use-preferences';
 import type { Theme } from '@/constants/theme';
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
 
@@ -21,11 +23,22 @@ export default function RootLayout() {
     // Gesture root for swipe-to-delete on the Alarms tab.
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PreferencesProvider>
-        <ThemeProvider>
-          <ThemedStack />
-        </ThemeProvider>
+        <OpeningPreferences>
+          <ThemeProvider>
+            <ThemedStack />
+          </ThemeProvider>
+        </OpeningPreferences>
       </PreferencesProvider>
     </GestureHandlerRootView>
+  );
+}
+
+// Opening-screen preferences, loaded before anything shows (the splash
+// screen stays up). The simulated time only counts in Developer mode.
+function OpeningPreferences({ children }: { children: ReactNode }) {
+  const { preferences } = usePreferences();
+  return (
+    <OpeningPreferencesProvider allowSimulatedTime={preferences.developerMode}>{children}</OpeningPreferencesProvider>
   );
 }
 
@@ -45,8 +58,10 @@ function ThemedStack() {
           headerShadowVisible: false,
         }}
       >
-        {/* Weather and Alarms tabs; Settings opens above them. */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Picks the starting tab on launch, then gets out of the way. */}
+        <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
+        {/* Weather, Alarms, and Preferences tabs; Settings opens above them. */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen
           name="test-weather"
