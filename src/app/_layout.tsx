@@ -62,7 +62,9 @@ function ThemedStack() {
         <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
         {/* Weather, Alarms, and Preferences tabs; Settings opens above them. */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        {/* Settings only opens from the Weather tab, so the back button says
+            "Weather" (not the "(tabs)" group name). */}
+        <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Weather' }} />
         <Stack.Screen
           name="test-weather"
           options={{

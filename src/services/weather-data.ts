@@ -1,7 +1,7 @@
 import type { ConditionId } from '@/constants/conditions';
 
 // The one weather shape the app uses. Every provider (Open-Meteo, NWS, demo)
-// converts its own response into this. Units: °F, mph, percent.
+// converts its own response into this. Units: °F, mph, percent, inches.
 
 // 'test' is Developer mode's filler data; 'demo' is the last-resort fallback.
 export type WeatherSource = 'open-meteo' | 'nws' | 'cache' | 'demo' | 'test';
@@ -15,6 +15,11 @@ export type CurrentWeather = {
   humidity: number;
   windSpeed: number;
   rainChance: number;
+  // UV index now, rounded (0-11+). Null when the source doesn't give it
+  // (NWS): show it as unavailable, never a made-up value.
+  uvIndex: number | null;
+  // Total snowfall expected today, in inches. Null when unavailable (NWS).
+  snowToday: number | null;
 };
 
 export type HourlyForecast = {
@@ -26,6 +31,14 @@ export type HourlyForecast = {
   isDay: boolean;
   temperature: number;
   rainChance: number;
+};
+
+// Today's sunrise and sunset, and tomorrow's sunrise (for the countdown at
+// night), in milliseconds since 1970.
+export type SunTimes = {
+  sunrise: number;
+  sunset: number;
+  tomorrowSunrise: number;
 };
 
 export type WeatherAlert = {
@@ -43,6 +56,9 @@ export type WeatherData = {
   updatedAt: number;
   current: CurrentWeather;
   hourly: HourlyForecast[];
+  // Missing when the source doesn't give them (NWS); the app then
+  // calculates them from the location (src/services/sun-times.ts).
+  sun?: SunTimes;
   // The most important active severe weather alert, if any. Only test
   // weather sets this until NWS alert fetching is built.
   alert?: WeatherAlert;

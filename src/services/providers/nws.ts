@@ -73,6 +73,9 @@ function toCurrent(period: NwsPeriod): CurrentWeather {
     humidity,
     windSpeed,
     rainChance: period.probabilityOfPrecipitation?.value ?? 0,
+    // The hourly forecast has no UV or snowfall amounts: unavailable.
+    uvIndex: null,
+    snowToday: null,
   };
 }
 

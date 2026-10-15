@@ -2,7 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
-import { spacing, type Theme } from '@/constants/theme';
+import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { GlassCard } from './glass-card';
@@ -90,6 +90,47 @@ export function OptionGroup<T extends string>({
           {option.value === selected && <Checkmark color={theme.colors.accent} />}
         </Pressable>
       ))}
+    </GlassCard>
+  );
+}
+
+// A segmented control: one choice from a few short options, side by side.
+// Screen readers hear each segment as a radio button, "System, selected".
+export function SegmentedControl<T extends string>({
+  options,
+  selected,
+  onSelect,
+  accessibilityLabel,
+  accessibilityHint,
+}: {
+  options: { value: T; label: string }[];
+  selected: T;
+  onSelect: (value: T) => void;
+  accessibilityLabel: string;
+  accessibilityHint?: string;
+}) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  return (
+    <GlassCard accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      <View style={styles.segments}>
+        {options.map((option) => {
+          const isSelected = option.value === selected;
+          return (
+            <Pressable
+              key={option.value}
+              style={[styles.segment, isSelected && styles.segmentSelected]}
+              onPress={() => onSelect(option.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={option.label}
+              accessibilityHint={accessibilityHint}
+            >
+              <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </GlassCard>
   );
 }
@@ -204,6 +245,29 @@ function createStyles(theme: Theme) {
     description: {
       fontSize: 14,
       color: theme.colors.textSecondary,
+    },
+    segments: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      padding: spacing.xs,
+    },
+    segment: {
+      flex: 1,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radius.md - spacing.xs,
+    },
+    segmentSelected: {
+      backgroundColor: theme.colors.buttonBackground,
+    },
+    segmentText: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: theme.colors.textPrimary,
+    },
+    segmentTextSelected: {
+      color: theme.colors.buttonText,
     },
     value: {
       fontSize: 17,

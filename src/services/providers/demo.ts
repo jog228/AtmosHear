@@ -1,5 +1,5 @@
 import type { ConditionId } from '@/constants/conditions';
-import { getTestWeatherOption, HOURLY_RAIN_CHANCE } from '@/constants/test-weather';
+import { getTestWeatherOption, HOURLY_RAIN_CHANCE, TEST_SUN } from '@/constants/test-weather';
 
 import { formatHour } from '../time';
 import type { HourlyForecast, WeatherData } from '../weather-data';
@@ -51,11 +51,24 @@ export function getDemoWeather(
       humidity: option.humidity,
       windSpeed: option.windSpeed,
       rainChance: option.rainChance,
+      uvIndex: option.uvIndex,
+      snowToday: option.snowToday,
     },
     hourly,
+    sun: {
+      sunrise: todayAt(TEST_SUN.sunrise),
+      sunset: todayAt(TEST_SUN.sunset),
+      tomorrowSunrise: todayAt(TEST_SUN.tomorrowSunrise) + 24 * HOUR_MS,
+    },
     // A fresh ID each time, so picking this test weather always beeps.
     alert: option.alert ? { id: `test-${option.id}-${now}`, name: option.alert } : undefined,
   };
+}
+
+function todayAt([hour, minute]: readonly [number, number]): number {
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  return date.getTime();
 }
 
 function isDaytime(hour: number) {

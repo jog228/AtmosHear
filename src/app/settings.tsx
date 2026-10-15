@@ -3,14 +3,14 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { DeveloperSettings } from '@/components/developer-settings';
 import { GlassBackdrop } from '@/components/glass-backdrop';
 import { GlassCard } from '@/components/glass-card';
-import { OptionGroup, SettingsSection, SwitchRow } from '@/components/settings-rows';
+import { SegmentedControl, SettingsSection, SwitchRow } from '@/components/settings-rows';
 import { spacing, type Theme } from '@/constants/theme';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useThemeSettings } from '@/hooks/use-theme';
 import type { Appearance } from '@/services/preferences';
 
-const APPEARANCE_OPTIONS: { value: Appearance; label: string; description?: string }[] = [
-  { value: 'system', label: 'System', description: 'Matches your phone’s light or dark mode' },
+const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
+  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ];
@@ -24,7 +24,13 @@ export default function SettingsScreen() {
     <GlassBackdrop style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
         <SettingsSection title="Appearance">
-          <OptionGroup options={APPEARANCE_OPTIONS} selected={appearance} onSelect={setAppearance} />
+          <SegmentedControl
+            options={APPEARANCE_OPTIONS}
+            selected={appearance}
+            onSelect={setAppearance}
+            accessibilityLabel="Appearance"
+            accessibilityHint="System matches your phone’s light or dark mode"
+          />
           {highContrast && (
             <Text style={styles.note}>High contrast is on, so it’s used instead of this setting.</Text>
           )}
@@ -34,30 +40,28 @@ export default function SettingsScreen() {
           <GlassCard>
             <SwitchRow
               label="Ambient sound"
-              description="A quiet looping sound for the current weather. Adjust it with your volume buttons."
               accessibilityLabel="Ambient weather sound"
-              accessibilityHint="Plays a quiet looping sound for the current weather while the app is open"
+              accessibilityHint="Plays a quiet looping sound for the current weather while the app is open. Adjust it with your volume buttons."
               value={preferences.ambientSound}
               onValueChange={(value) => updatePreferences({ ambientSound: value })}
             />
             <SwitchRow
               label="Vibration"
-              description="A tap rhythm for the weather when it loads or changes, or when you tap the weather icon. Severe alerts always vibrate."
               accessibilityLabel="Weather vibration"
-              accessibilityHint="Vibrates a pattern for the current weather. Severe alerts vibrate even when this is off"
+              accessibilityHint="Plays a tap rhythm for the weather when it loads or changes, or when you tap the weather icon."
               value={preferences.vibration}
               onValueChange={(value) => updatePreferences({ vibration: value })}
               divider
             />
           </GlassCard>
+          <Text style={styles.note}>Severe alerts always play.</Text>
         </SettingsSection>
 
         <SettingsSection title="Accessibility">
           <GlassCard>
             <SwitchRow
               label="High contrast"
-              description="Light text on a dark background with yellow accents. Overrides Appearance."
-              accessibilityHint="Uses light text on a dark background with yellow accents, in light or dark mode"
+              accessibilityHint="Uses light text on a dark background with yellow accents. Overrides Appearance."
               value={highContrast}
               onValueChange={setHighContrast}
             />

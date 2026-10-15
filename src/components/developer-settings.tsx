@@ -48,7 +48,7 @@ export function DeveloperSettings() {
         <GlassCard>
           <SwitchRow
             label="Developer mode"
-            description="Shows test weather instead of live weather, for testing and presenting."
+            accessibilityHint="Shows test weather instead of live weather, for testing and presenting"
             value={developerMode}
             onValueChange={(value) => updatePreferences({ developerMode: value })}
           />

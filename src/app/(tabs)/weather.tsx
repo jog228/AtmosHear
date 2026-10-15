@@ -8,6 +8,7 @@ import { GlassBackdrop } from '@/components/glass-backdrop';
 import { HourlyForecast } from '@/components/hourly-forecast';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
+import { SunCard } from '@/components/sun-card';
 import { mostSignificant, sortByPriority } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
 import { useAlertSound } from '@/hooks/use-alert-sound';
@@ -75,6 +76,7 @@ export default function HomeScreen() {
         style={styles.cards}
       >
         <DetailCards current={weather.current} />
+        <SunCard weather={weather} place={place} visible={onWeatherTab} />
         <HourlyForecast hours={weather.hourly} />
       </GlassBackdrop>
     </ScrollView>

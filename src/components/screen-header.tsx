@@ -21,6 +21,10 @@ export function ScreenHeader({ place, weather, developerMode }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const source = describeSource(weather);
+  // The live provider's name is for developers only. Saved forecasts and
+  // demo data always say so, since they mean the weather may not be current.
+  const isLive = weather.source === 'open-meteo' || weather.source === 'nws';
+  const showSource = developerMode || !isLive;
 
   return (
     <View style={styles.container}>
@@ -36,9 +40,11 @@ export function ScreenHeader({ place, weather, developerMode }: Props) {
       {place.isFallback && (
         <Text style={styles.note}>Location unavailable, showing default</Text>
       )}
-      <Text style={styles.note} accessibilityLabel={source.spoken}>
-        {source.label}
-      </Text>
+      {showSource && (
+        <Text style={styles.note} accessibilityLabel={source.spoken}>
+          {source.label}
+        </Text>
+      )}
       {/* Top-right controls: Settings, with the quick mute under it. */}
       <View style={styles.controls}>
         <Link href="/settings" asChild>

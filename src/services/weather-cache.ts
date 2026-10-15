@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WeatherData } from './weather-data';
 
 // Bump the version if WeatherData changes shape, so old saves are ignored.
-const CACHE_KEY = 'weather.cache.v1';
+// v2: added uvIndex and snowToday.
+const CACHE_KEY = 'weather.cache.v2';
 const HOUR_MS = 60 * 60 * 1000;
 
 export async function saveCachedWeather(data: WeatherData): Promise<void> {
