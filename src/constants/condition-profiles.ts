@@ -50,8 +50,12 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Overcast',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/03-overcast.png'),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // A low, muted hum, intentionally softer (-29.1 LUFS vs clear's -27.3).
+    // Don't normalize it up.
+    sound: require('../../assets/sounds/overcast.m4a'),
+    // Overcast is a supporting layer: its low end would muddy light rain at
+    // full level, so it drops to 60% under other sounds.
+    supportingVolume: 0.6,
   },
   'light-rain': {
     label: 'Light rain',
@@ -108,14 +112,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/10-wind.png'),
     sound: require('../../assets/sounds/wind.m4a'),
-    // Meant to match clear, but the file measures -25.6 LUFS (1.7 LU louder).
-    soundVolume: 0.82,
+    // Gusty recording at -30.4 LUFS (3.1 LU under clear), so no correction.
     // Wind is a supporting layer: half its solo level under other sounds.
     supportingVolume: 0.5,
     // Wind's low rumble covers quiet sounds, so it goes further down under
     // them. Under snow, snow stays louder in every frequency band; under
-    // light rain (the quietest sound), the rain stays about 6 LU in front.
-    supportingVolumeWith: { 'snow': 0.35, 'light-rain': 0.25 },
+    // light rain (the quietest sound), the rain stays about 9 LU in front.
+    supportingVolumeWith: { 'snow': 0.3, 'light-rain': 0.25 },
   },
   'extreme-heat': {
     label: 'Extreme heat',
