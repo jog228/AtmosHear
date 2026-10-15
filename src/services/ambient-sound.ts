@@ -8,9 +8,10 @@ import type { ConditionId } from '@/constants/conditions';
 export const AMBIENT_VOLUME = 0.6;
 // Quieter while VoiceOver/TalkBack is on, so it doesn't compete with speech.
 export const AMBIENT_VOLUME_SCREEN_READER = 0.3;
-const FADE_IN_MS = 1500; // launch, returning to the app, turning sound on
+const FADE_IN_MS = 1500; // launch, returning to the app
+const TURN_ON_MS = 1000; // unmuting (home screen button or Settings toggle)
 const CROSSFADE_MS = 1000; // condition changes
-const TURN_OFF_MS = 300; // Settings toggle off
+const TURN_OFF_MS = 300; // muting (home screen button or Settings toggle)
 const VOLUME_CHANGE_MS = 500; // screen reader turned on/off
 const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
 const DUCK_MS = 200; // severe alert starting
@@ -37,6 +38,7 @@ class AmbientSound {
   private playing: ConditionId[] = [];
   private volume = AMBIENT_VOLUME;
   private ducked = false;
+  private enabled = true;
 
   // Plays even with the ringer switch on silent: only the volume buttons
   // and the in-app toggle control it. Other apps' audio keeps playing.
@@ -55,6 +57,8 @@ class AmbientSound {
     // Adding, removing, or swapping layers while sound is playing crossfades
     // them together; starting from silence fades in.
     const crossfading = this.playing.length > 0 && wanted.length > 0 && wanted.join() !== this.playing.join();
+    const turningOn = enabled && !this.enabled;
+    this.enabled = enabled;
     this.playing = wanted;
     this.volume = volume;
 
@@ -87,7 +91,8 @@ class AmbientSound {
       // another layer joins).
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
-      const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? FADE_IN_MS : VOLUME_CHANGE_MS;
+      const fadeIn = turningOn ? TURN_ON_MS : FADE_IN_MS;
+      const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? fadeIn : VOLUME_CHANGE_MS;
       this.fade(layer, this.targetVolume(id), fadeMs, crossfading ? 'equalPower' : 'linear');
     }
   }

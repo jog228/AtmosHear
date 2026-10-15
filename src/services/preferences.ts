@@ -11,6 +11,7 @@ export type Preferences = {
   appearance: Appearance;
   highContrast: boolean;
   ambientSound: boolean;
+  vibration: boolean;
   developerMode: boolean;
   devWeatherSource: DevWeatherSource;
   // An id from src/constants/test-weather.ts.
@@ -24,6 +25,7 @@ const KEYS: Partial<Record<keyof Preferences, string>> = {
   appearance: 'preferences.appearance',
   highContrast: 'preferences.highContrast',
   ambientSound: 'preferences.ambientSound',
+  vibration: 'preferences.vibration',
   developerMode: 'preferences.developerMode',
   devWeatherSource: 'preferences.devWeatherSource',
   testWeather: 'preferences.testWeather',
@@ -33,6 +35,7 @@ const DEFAULTS: Preferences = {
   appearance: 'system',
   highContrast: false,
   ambientSound: true,
+  vibration: true,
   developerMode: false,
   devWeatherSource: 'test',
   testWeather: DEFAULT_TEST_WEATHER,
@@ -50,6 +53,7 @@ export async function loadPreferences(): Promise<Preferences> {
       highContrast: saved.highContrast === 'true',
       // On unless the user turned it off.
       ambientSound: saved.ambientSound !== 'false',
+      vibration: saved.vibration !== 'false',
       developerMode: saved.developerMode === 'true',
       devWeatherSource:
         saved.devWeatherSource === 'open-meteo' || saved.devWeatherSource === 'nws'

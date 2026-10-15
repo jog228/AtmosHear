@@ -12,7 +12,7 @@ type Props = {
   current: CurrentWeather;
   // During a severe alert, tapping the icon replays the alert beeps.
   alertActive: boolean;
-  // Tapping the icon replays the condition's sound (and later its haptics).
+  // Tapping the icon replays the condition's sound and vibration.
   onReplay: () => void;
 };
 
@@ -29,7 +29,7 @@ export function CurrentConditions({ current, alertActive, onReplay }: Props) {
         accessibilityRole="button"
         // "Replay clear weather", but "Replay severe weather alert".
         accessibilityLabel={`Replay ${label.includes('weather') ? label : `${label} weather`}`}
-        accessibilityHint={alertActive ? 'Plays the alert sound again' : 'Plays the sound and vibration for this weather'}
+        accessibilityHint={alertActive ? 'Plays the alert sound and vibration again' : 'Plays the sound and vibration for this weather'}
         style={({ pressed }) => pressed && styles.pressed}
       >
         <WeatherIcon conditions={current.conditions} size={220} />

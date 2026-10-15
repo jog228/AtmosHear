@@ -17,7 +17,7 @@ Each weather condition has its own sound, vibration pattern, and color so users 
 - Expo + TypeScript + Expo Router (routes in `src/app`).
 - Weather: Open-Meteo first, then the NWS API as backup, then the last saved forecast, then demo data (`src/services/weather.ts`). Every provider in `src/services/providers/` returns the shared `WeatherData` type (`src/services/weather-data.ts`); the rest of the app only uses that type. NWS requests must send a User-Agent header. Severe alerts from the NWS API later.
 - `expo-location`, `expo-audio`, `@react-native-async-storage/async-storage`.
-- Custom haptics come later via `react-native-haptic-feedback`, which needs a dev build. Until then, everything must run in Expo Go.
+- Vibration uses `expo-haptics` (works in Expo Go). Some patterns move to Core Haptics (AHAP) later in a dev build; until then, everything must run in Expo Go.
 
 ## Conditions
 
@@ -34,7 +34,11 @@ Every sound follows one pattern, so adding one is a one-line change:
 
 File requirements: a short loop (about 4 seconds) with fades at both ends so the loop point doesn't click, loudness-matched to `clear.m4a` (about -27 LUFS integrated). If a file comes in louder, either ask for a re-export or add `soundVolume` (0-1) to that profile as a correction: `10 ** (-differenceInLU / 20)`. `sleet.m4a` currently uses `soundVolume: 0.48` because it measures 6.3 LU louder. `heavy-rain.m4a` uses `soundVolume: 0.7` to sit between clear and thunderstorm (the file measures -21.1 LUFS). Some files are intentionally softer: `snow.m4a` (-28.3 LUFS) is meant to feel hushed, so don't normalize it up. `light-rain.m4a` (-33.5 LUFS) is intentionally a step softer than heavy rain, so don't normalize it either. `overcast.m4a` (-29.1 LUFS) is an intentionally soft hum; don't normalize it up. `wind.m4a` (-30.4 LUFS) is a gusty recording that plays uncorrected. `extreme-cold.m4a` (-28.0 LUFS) is a rhythmic ice crack once per second, so it must stay exactly 4.000 seconds (expo-audio loops without a gap). Some are intentionally louder: `thunderstorm.m4a` (-21.2 LUFS) is meant to feel intense, so don't normalize it down.
 
-Playback (looping, crossfades, layering overlapping conditions, background pause, VoiceOver ducking, the Settings toggle) is handled by `src/services/ambient-sound.ts` for every condition; nothing else needs to change. When conditions overlap, every one with a sound plays as its own layer, each at `1/√layers` volume (about 71% for two) so the mix isn't louder than one sound; conditions without a file are skipped. Background sounds set `supportingVolume` in their profile to sit under other sounds (overcast: 60%; wind: 50%, or 30% under snow and 25% under light rain via `supportingVolumeWith`) and play at full level when they're the only sound.
+Playback (looping, crossfades, layering overlapping conditions, background pause, VoiceOver ducking, the Settings toggle and the home screen mute button, which share one `ambientSound` setting) is handled by `src/services/ambient-sound.ts` for every condition; nothing else needs to change. When conditions overlap, every one with a sound plays as its own layer, each at `1/√layers` volume (about 71% for two) so the mix isn't louder than one sound; conditions without a file are skipped. Background sounds set `supportingVolume` in their profile to sit under other sounds (overcast: 60%; wind: 50%, or 30% under snow and 25% under light rain via `supportingVolumeWith`) and play at full level when they're the only sound.
+
+## Vibration
+
+Each condition's `haptic` field in `src/constants/condition-profiles.ts` is a pattern of timed taps (`{ at, style }`, helpers in `src/constants/haptics.ts`); patterns differ mainly by rhythm. `src/services/haptics.ts` plays them (one sequence at a time, never looped, a no-op on web), and `src/hooks/use-condition-haptics.ts` decides when: once when weather loads, when the conditions change, and when the weather icon is tapped. Combinations play the most significant pattern, then the next after 400 ms. The Settings "Vibration" toggle turns condition patterns off; the severe alert pattern plays with each alert beep regardless, and a condition pattern can't interrupt it.
 
 ## Severe alert sound
 

@@ -30,7 +30,7 @@ export default function SettingsScreen() {
           )}
         </SettingsSection>
 
-        <SettingsSection title="Sound">
+        <SettingsSection title="Sound and vibration">
           <GlassCard>
             <SwitchRow
               label="Ambient sound"
@@ -39,6 +39,15 @@ export default function SettingsScreen() {
               accessibilityHint="Plays a quiet looping sound for the current weather while the app is open"
               value={preferences.ambientSound}
               onValueChange={(value) => updatePreferences({ ambientSound: value })}
+            />
+            <SwitchRow
+              label="Vibration"
+              description="A tap rhythm for the weather when it loads or changes, or when you tap the weather icon. Severe alerts always vibrate."
+              accessibilityLabel="Weather vibration"
+              accessibilityHint="Vibrates a pattern for the current weather. Severe alerts vibrate even when this is off"
+              value={preferences.vibration}
+              onValueChange={(value) => updatePreferences({ vibration: value })}
+              divider
             />
           </GlassCard>
         </SettingsSection>

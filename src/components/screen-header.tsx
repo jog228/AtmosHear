@@ -8,6 +8,8 @@ import type { Place } from '@/services/location';
 import { formatSavedTime } from '@/services/time';
 import type { WeatherData } from '@/services/weather-data';
 
+import { MuteButton } from './mute-button';
+
 type Props = {
   place: Place;
   weather: WeatherData;
@@ -37,16 +39,20 @@ export function ScreenHeader({ place, weather, developerMode }: Props) {
       <Text style={styles.note} accessibilityLabel={source.spoken}>
         {source.label}
       </Text>
-      <Link href="/settings" asChild>
-        <Pressable style={styles.settingsButton} accessibilityRole="button" accessibilityLabel="Settings">
-          <SymbolView
-            name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
-            size={26}
-            tintColor={theme.colors.heading}
-            accessible={false}
-          />
-        </Pressable>
-      </Link>
+      {/* Top-right controls: Settings, with the quick mute under it. */}
+      <View style={styles.controls}>
+        <Link href="/settings" asChild>
+          <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Settings">
+            <SymbolView
+              name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
+              size={26}
+              tintColor={theme.colors.heading}
+              accessible={false}
+            />
+          </Pressable>
+        </Link>
+        <MuteButton />
+      </View>
     </View>
   );
 }
@@ -106,10 +112,12 @@ function createStyles(theme: Theme) {
       color: theme.colors.textSecondary,
       textAlign: 'center',
     },
-    settingsButton: {
+    controls: {
       position: 'absolute',
       top: -10,
       right: 0,
+    },
+    iconButton: {
       width: 48,
       height: 48,
       alignItems: 'center',

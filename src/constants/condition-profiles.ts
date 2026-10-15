@@ -3,6 +3,7 @@ import type { ImageProps } from 'expo-image';
 
 import { sortByPriority } from './condition-priority';
 import type { ConditionId } from './conditions';
+import { taps, tapsEvery, type HapticPattern } from './haptics';
 import { darkPalette, palette } from './theme';
 
 export type ConditionProfile = {
@@ -26,23 +27,33 @@ export type ConditionProfile = {
   // Per-condition overrides of supportingVolume, e.g. quieter under snow.
   // With several other sounds, the lowest applies.
   supportingVolumeWith?: Partial<Record<ConditionId, number>>;
-  // Filled in later steps: haptic pattern, light animation.
+  // Vibration: timed taps (src/constants/haptics.ts). Patterns differ
+  // mainly by rhythm. Played once, never looped.
+  haptic: HapticPattern;
+  // Filled in a later step: light animation.
 };
 
-// The single place that defines how each condition looks (and later sounds
-// and feels). To change a condition's color, swap the palette names below.
+// The single place that defines how each condition looks, sounds, and
+// feels. To change a condition's color, swap the palette names below.
 // To change its icon, replace the PNG (same file name) or the require().
 export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'clear': {
     label: 'Clear',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/01-clear.png'),
+    // Slow, steady.
+    haptic: taps('soft', [0, 600, 1200, 1800]),
     sound: require('../../assets/sounds/clear.m4a'),
   },
   'partly-cloudy': {
     label: 'Partly cloudy',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
+    // Medium + light pairs.
+    haptic: [
+      ...taps('medium', [0, 700, 1400]),
+      ...taps('light', [150, 850, 1550]),
+    ],
     // TODO: awaiting sound from teammate.
     sound: null,
   },
@@ -50,6 +61,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Overcast',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/03-overcast.png'),
+    // Very slow and faint.
+    haptic: taps('soft', [0, 1000, 2000]),
     // A low, muted hum, intentionally softer (-29.1 LUFS vs clear's -27.3).
     // Don't normalize it up.
     sound: require('../../assets/sounds/overcast.m4a'),
@@ -61,6 +74,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Light rain',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
+    // Quick and slightly uneven, like drops.
+    haptic: taps('light', [0, 110, 260, 350, 500, 620, 760, 850, 1000, 1130]),
     // Intentionally a step softer than heavy rain (-33.5 LUFS vs heavy
     // rain's -24.2 after its correction). Don't normalize it.
     sound: require('../../assets/sounds/light-rain.m4a'),
@@ -69,6 +84,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Heavy rain',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
+    // Rapid and strong.
+    haptic: tapsEvery('heavy', 70, 0, 1400),
     sound: require('../../assets/sounds/heavy-rain.m4a'),
     // Meant to sit between clear and thunderstorm, but the file measures
     // -21.1 LUFS (same as thunderstorm), so this brings it to about -24.2.
@@ -78,6 +95,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Thunderstorm',
     color: { light: palette.ink, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
+    // A rumble, then two sharp cracks.
+    haptic: [...tapsEvery('heavy', 40, 0, 500), ...taps('rigid', [1200, 2000])],
     // Intentionally louder to feel intense (-21.2 LUFS vs clear's -27.3).
     // Don't normalize it down.
     sound: require('../../assets/sounds/thunderstorm.m4a'),
@@ -86,6 +105,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Snow',
     color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
     icon: require('../../assets/icons/weather-icons/07-snow.png'),
+    // A slow ripple in groups of three.
+    haptic: taps('soft', [0, 250, 500, 1100, 1350, 1600]),
     // Intentionally a bit softer to feel hushed (-28.3 LUFS vs clear's
     // -27.3). Don't normalize it up.
     sound: require('../../assets/sounds/snow.m4a'),
@@ -94,6 +115,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Sleet',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/08-sleet.png'),
+    // Irregular and sharp.
+    haptic: taps('rigid', [0, 90, 340, 400, 720, 1010, 1080]),
     sound: require('../../assets/sounds/sleet.m4a'),
     // sleet.m4a measures -21.0 LUFS vs clear.m4a at -27.3 (6.3 LU louder).
     // 0.48 = -6.3 dB. Remove once the file is re-exported to match.
@@ -103,6 +126,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: require('../../assets/icons/weather-icons/09-fog.png'),
+    // A slowing wave.
+    haptic: taps('soft', [0, 800, 1700, 2700]),
     // A low, airy drone, meant to sit soft. Measures -27.3 LUFS (same as
     // clear), so no correction. Don't normalize it up.
     sound: require('../../assets/sounds/fog.m4a'),
@@ -111,6 +136,12 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Windy',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/10-wind.png'),
+    // Swells and fades.
+    haptic: [
+      ...taps('light', [0, 100, 600, 700]),
+      ...taps('medium', [200, 300, 500]),
+      ...taps('heavy', [400]),
+    ],
     sound: require('../../assets/sounds/wind.m4a'),
     // Gusty recording at -30.4 LUFS (3.1 LU under clear), so no correction.
     // Wind is a supporting layer: half its solo level under other sounds.
@@ -125,6 +156,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
+    // Steady and warm.
+    haptic: tapsEvery('soft', 50, 0, 1500),
     // TODO: awaiting sound from teammate.
     sound: null,
   },
@@ -133,6 +166,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
+    // Shivering triplets, in time with the ice-crack sound.
+    haptic: taps('light', [0, 60, 120, 1000, 1060, 1120, 2000, 2060, 2120]),
     // A sharp ice crack once per second, so the 4-second loop must stay
     // exactly 4.000 s. Measures -28.0 LUFS; don't normalize it.
     sound: require('../../assets/sounds/extreme-cold.m4a'),
@@ -142,6 +177,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
+    // Heavy triplets, played with each alert beep (src/services/alert-sound.ts)
+    // even when Vibration is off.
+    haptic: taps('heavy', [0, 100, 200, 500, 600, 700, 1000, 1100, 1200]),
     // No ambient loop: the alert beeps instead (src/constants/alert-sound.ts),
     // then the conditions underneath it keep playing.
     sound: null,

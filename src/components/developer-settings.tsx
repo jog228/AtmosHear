@@ -11,6 +11,7 @@ import { useReduceTransparency } from '@/hooks/use-reduce-transparency';
 import { announceAlert } from '@/hooks/use-alert-sound';
 import { useTheme } from '@/hooks/use-theme';
 import { alertSound } from '@/services/alert-sound';
+import { conditionPatterns, hapticPlayer } from '@/services/haptics';
 import type { DevWeatherSource } from '@/services/preferences';
 
 import { GlassCard } from './glass-card';
@@ -59,6 +60,15 @@ export function DeveloperSettings() {
               description="Plays the severe alert beeps, even with ambient sound off."
               accessibilityHint="Plays the severe weather alert sound three times"
               onPress={() => alertSound.play(() => option.alert && announceAlert(option.alert))}
+              divider
+            />
+          )}
+          {developerMode && devWeatherSource === 'test' && (
+            <ActionRow
+              label="Test vibration"
+              description={`Plays the ${option.label.toLowerCase()} pattern, even with Vibration off.`}
+              accessibilityHint="Vibrates the pattern for the current test weather"
+              onPress={() => hapticPlayer.play(conditionPatterns(option.conditions))}
               divider
             />
           )}

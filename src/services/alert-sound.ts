@@ -1,12 +1,15 @@
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 
 import { ALERT_REPEATS, ALERT_SOUND } from '@/constants/alert-sound';
+import { conditionProfiles } from '@/constants/condition-profiles';
 
 import { ambientSound } from './ambient-sound';
+import { hapticPlayer } from './haptics';
 
 // Plays the severe weather alert: the alert sound a few times back to back
-// at full volume, with the ambient sounds ducked underneath. Separate from
-// the ambient loops, and plays even when "Ambient sound" is off in Settings.
+// at full volume, with the ambient sounds ducked underneath, and the alert
+// vibration with each beep. Separate from the ambient loops, and plays even
+// when "Ambient sound" or "Vibration" is off in Settings.
 class AlertSound {
   private player: AudioPlayer | null = null;
   // Beeps still to play after the current one.
@@ -45,6 +48,7 @@ class AlertSound {
     this.beeping = false;
     this.onFinished = undefined;
     this.player.pause();
+    hapticPlayer.cancel();
     ambientSound.setDucked(false);
   }
 
@@ -55,6 +59,7 @@ class AlertSound {
     player.volume = 1;
     player.seekTo(0);
     player.play();
+    hapticPlayer.play([conditionProfiles['severe-alert'].haptic], { alert: true });
   }
 
   private handleFinished() {
