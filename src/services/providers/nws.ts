@@ -4,7 +4,9 @@ import { fetchJson } from '../http';
 import type { Place } from '../location';
 import { conditionsFromNwsForecast } from '../nws-condition';
 import { formatHour } from '../time';
-import type { CurrentWeather, HourlyForecast, WeatherData } from '../weather-data';
+import type { ConditionId } from '@/constants/conditions';
+
+import type { CurrentWeather, DailyForecast, HourlyForecast, ProviderWeather } from '../weather-data';
 
 // Backup source. US only, no API key, but NWS requires a User-Agent.
 // Docs: https://www.weather.gov/documentation/services-web-api
@@ -14,6 +16,7 @@ const HEADERS = {
   Accept: 'application/geo+json',
 };
 const HOURS_AHEAD = 12;
+const DAYS = 3;
 
 type PointsResponse = {
   properties: { forecastHourly: string };
@@ -35,7 +38,7 @@ type HourlyResponse = {
   properties: { periods: NwsPeriod[] };
 };
 
-export async function fetchNws(place: Place): Promise<WeatherData> {
+export async function fetchNws(place: Place): Promise<ProviderWeather> {
   // NWS wants at most 4 decimal places.
   const lat = Number(place.latitude.toFixed(4));
   const lon = Number(place.longitude.toFixed(4));
@@ -56,7 +59,37 @@ export async function fetchNws(place: Place): Promise<WeatherData> {
     updatedAt: now,
     current: toCurrent(currentPeriod),
     hourly: upcoming.slice(0, HOURS_AHEAD).map(toHour),
+    daily: toDays(periods),
   };
+}
+
+// NWS's hourly forecast runs about a week ahead, so the 3-day forecast comes
+// from grouping its hours by day (no extra request). Today only counts the
+// hours left, so its high or low can be missing earlier hours.
+function toDays(periods: NwsPeriod[]): DailyForecast[] {
+  const byDate = new Map<string, NwsPeriod[]>();
+  for (const period of periods) {
+    // startTime is in the location's time zone: "2026-10-13".
+    const date = period.startTime.slice(0, 10);
+    byDate.set(date, [...(byDate.get(date) ?? []), period]);
+  }
+  return [...byDate].slice(0, DAYS).map(([date, hours]) => {
+    const temperatures = hours.map(toFahrenheit);
+    const daytime = hours.filter((hour) => hour.isDaytime);
+    return {
+      date,
+      conditions: [mostCommon((daytime.length > 0 ? daytime : hours).map((hour) => conditionsFromNwsForecast(hour.shortForecast)[0]))],
+      high: Math.max(...temperatures),
+      low: Math.min(...temperatures),
+    };
+  });
+}
+
+// The condition that covers the most hours (ties: the earliest).
+function mostCommon(ids: ConditionId[]): ConditionId {
+  const counts = new Map<ConditionId, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].reduce((best, entry) => (entry[1] > best[1] ? entry : best))[0];
 }
 
 function toCurrent(period: NwsPeriod): CurrentWeather {

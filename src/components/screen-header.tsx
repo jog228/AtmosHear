@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { radius, spacing, type Theme } from '@/constants/theme';
@@ -15,9 +16,11 @@ type Props = {
   weather: WeatherData;
   // Shows a "Developer mode" pill so test weather is never mistaken for real.
   developerMode: boolean;
+  // Shown under the location, e.g. the time-of-day greeting.
+  greeting?: ReactNode;
 };
 
-export function ScreenHeader({ place, weather, developerMode }: Props) {
+export function ScreenHeader({ place, weather, developerMode, greeting }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const source = describeSource(weather);
@@ -37,6 +40,7 @@ export function ScreenHeader({ place, weather, developerMode }: Props) {
         </View>
       )}
       <Text style={styles.location}>{weather.locationName}</Text>
+      {greeting}
       {place.isFallback && (
         <Text style={styles.note}>Location unavailable, showing default</Text>
       )}
@@ -87,10 +91,15 @@ function describeSource(weather: WeatherData): { label: string; spoken: string }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
+    // Title, location, and greeting as one group, with the same small gap
+    // between each. The side padding matches the buttons' width on both
+    // sides, so text stays centered and never runs under them. Extra room
+    // below (32 in all) sets the group apart from the weather icon.
     container: {
       alignItems: 'center',
       gap: spacing.xs,
       paddingHorizontal: 48,
+      marginBottom: spacing.sm,
     },
     title: {
       fontSize: 20,

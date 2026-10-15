@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { localDateString } from './time';
 import type { WeatherData } from './weather-data';
 
 // Bump the version if WeatherData changes shape, so old saves are ignored.
-// v2: added uvIndex and snowToday.
+// v2: added uvIndex and snowToday. (airQuality is filled in from its own
+// cache when a saved forecast is used.)
 const CACHE_KEY = 'weather.cache.v2';
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -25,10 +27,14 @@ export async function loadCachedWeather(): Promise<WeatherData | null> {
     if (!data?.current || !Array.isArray(data.hourly)) return null;
 
     const now = Date.now();
+    const today = localDateString();
     return {
       ...data,
       source: 'cache',
       hourly: data.hourly.filter((hour) => hour.time + HOUR_MS > now),
+      // Days that have passed are dropped; saves from before the 3-day
+      // forecast have none.
+      daily: (data.daily ?? []).filter((day) => day.date >= today),
     };
   } catch {
     return null;

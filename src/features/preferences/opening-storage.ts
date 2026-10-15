@@ -8,7 +8,12 @@ export type OpeningPreferences = {
   // Developer testing: a fake time of day for the opening logic only, or
   // null for the real time. Only used while Developer mode is on.
   simulatedTime: ClockTime | null;
+  // For the Weather screen greeting ("Good morning, Jolie!"). Trimmed;
+  // empty means no name.
+  name: string;
 };
+
+export const NAME_MAX_LENGTH = 15;
 
 const STORAGE_KEY = 'openingPreferences';
 
@@ -16,6 +21,7 @@ export const DEFAULT_OPENING_PREFERENCES: OpeningPreferences = {
   morning: DEFAULT_MORNING,
   evening: DEFAULT_EVENING,
   simulatedTime: null,
+  name: '',
 };
 
 // Saved preferences, with defaults for anything missing or invalid (the
@@ -28,6 +34,7 @@ export async function loadOpeningPreferences(): Promise<OpeningPreferences> {
       morning: isClockTime(saved.morning) && isAm(saved.morning) ? saved.morning : DEFAULT_MORNING,
       evening: isClockTime(saved.evening) && !isAm(saved.evening) ? saved.evening : DEFAULT_EVENING,
       simulatedTime: isClockTime(saved.simulatedTime) ? saved.simulatedTime : null,
+      name: cleanName(saved.name),
     };
   } catch (error) {
     console.warn('Failed to load opening preferences', error);
@@ -41,6 +48,11 @@ export async function saveOpeningPreferences(preferences: OpeningPreferences): P
   } catch (error) {
     console.warn('Failed to save opening preferences', error);
   }
+}
+
+// Trims spaces and limits the length; anything else becomes no name.
+export function cleanName(value: unknown): string {
+  return typeof value === 'string' ? value.trim().slice(0, NAME_MAX_LENGTH).trim() : '';
 }
 
 function isClockTime(value: unknown): value is ClockTime {

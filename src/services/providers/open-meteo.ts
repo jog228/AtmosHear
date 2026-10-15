@@ -2,7 +2,7 @@ import { addOverlays } from '../condition-overlays';
 import { fetchJson } from '../http';
 import type { Place } from '../location';
 import { formatHour } from '../time';
-import type { HourlyForecast, WeatherData } from '../weather-data';
+import type { DailyForecast, HourlyForecast, ProviderWeather, WeatherData } from '../weather-data';
 import { conditionFromWmoCode } from '../wmo-condition';
 
 type OpenMeteoResponse = {
@@ -28,6 +28,11 @@ type OpenMeteoResponse = {
   };
   // Day by day from today, in the location's time zone.
   daily: {
+    // Unix seconds at the start of each day.
+    time: number[];
+    weather_code: number[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
     snowfall_sum: number[];
     // Unix seconds; [0] is today, [1] tomorrow.
     sunrise: number[];
@@ -36,15 +41,16 @@ type OpenMeteoResponse = {
 };
 
 const HOURS_AHEAD = 12;
+const DAYS = 3;
 
 // Primary source. Free, no API key, worldwide: https://open-meteo.com/en/docs
-export async function fetchOpenMeteo(place: Place): Promise<WeatherData> {
+export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
   const params = [
     `latitude=${place.latitude}`,
     `longitude=${place.longitude}`,
     'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day,uv_index',
     'hourly=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation_probability,is_day,uv_index',
-    'daily=snowfall_sum,sunrise,sunset',
+    'daily=weather_code,temperature_2m_max,temperature_2m_min,snowfall_sum,sunrise,sunset',
     'temperature_unit=fahrenheit',
     'wind_speed_unit=mph',
     // Snowfall in inches.
@@ -53,6 +59,8 @@ export async function fetchOpenMeteo(place: Place): Promise<WeatherData> {
     'timeformat=unixtime',
     // The first hourly entry is the current hour, followed by the next 12.
     `forecast_hours=${HOURS_AHEAD + 1}`,
+    // Today and the next two days.
+    `forecast_days=${DAYS}`,
   ].join('&');
 
   const { current, hourly, daily, utc_offset_seconds } = await fetchJson<OpenMeteoResponse>(
@@ -93,8 +101,28 @@ export async function fetchOpenMeteo(place: Place): Promise<WeatherData> {
       snowToday: roundOrNull(daily?.snowfall_sum?.[0], 1),
     },
     hourly: hours.slice(1, HOURS_AHEAD + 1),
+    daily: toDays(daily, utc_offset_seconds),
     sun: toSunTimes(daily),
   };
+}
+
+function toDays(daily: OpenMeteoResponse['daily'] | undefined, utcOffsetSeconds: number): DailyForecast[] {
+  if (!daily?.time) return [];
+  return daily.time.slice(0, DAYS).flatMap((seconds, i) => {
+    const high = daily.temperature_2m_max?.[i];
+    const low = daily.temperature_2m_min?.[i];
+    const code = daily.weather_code?.[i];
+    if (high == null || low == null || code == null) return [];
+    return [
+      {
+        // Shift into the location's time zone, then read the date as UTC.
+        date: new Date((seconds + utcOffsetSeconds) * 1000).toISOString().slice(0, 10),
+        conditions: [conditionFromWmoCode(code)],
+        high: Math.round(high),
+        low: Math.round(low),
+      },
+    ];
+  });
 }
 
 // Today's sunrise and sunset and tomorrow's sunrise, or undefined if any is

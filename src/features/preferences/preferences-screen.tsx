@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+import { NameField } from './name-field';
 import { formatClockTime, isAm, type ClockTime } from './opening-time';
 import { TimePickerSheet } from './time-picker-sheet';
 import { useOpeningPreferences } from './use-opening-preferences';
@@ -57,10 +58,23 @@ export function PreferencesScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+        // Tapping outside the name field closes the keyboard (and saves).
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={styles.title} accessibilityRole="header">
           Preferences
         </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Name
+          </Text>
+          <NameField />
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle} accessibilityRole="header">

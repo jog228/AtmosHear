@@ -2,10 +2,11 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 
+import { getAqiLevel } from '@/constants/air-quality';
 import { mostSignificant } from '@/constants/condition-priority';
 import { spacing, type Theme } from '@/constants/theme';
 import { useConditionColor, useTheme } from '@/hooks/use-theme';
-import type { CurrentWeather } from '@/services/weather-data';
+import type { AirQuality, CurrentWeather } from '@/services/weather-data';
 
 import { GlassCard } from './glass-card';
 
@@ -29,7 +30,7 @@ const BLEED = spacing.md;
 const SHADOW_TOP = spacing.md;
 const SHADOW_BOTTOM = spacing.lg;
 
-export function DetailCards({ current }: { current: CurrentWeather }) {
+export function DetailCards({ current, airQuality }: { current: CurrentWeather; airQuality: AirQuality | null }) {
   const styles = createStyles(useTheme());
   const accent = useConditionColor(mostSignificant(current.conditions));
 
@@ -39,7 +40,7 @@ export function DetailCards({ current }: { current: CurrentWeather }) {
   const width = rowWidth ?? windowWidth;
   const cardWidth = (width - BLEED - VISIBLE_CARDS * GAP) / (VISIBLE_CARDS + PEEK);
 
-  const details = describeDetails(current);
+  const details = describeDetails(current, airQuality);
 
   return (
     <ScrollView
@@ -69,9 +70,10 @@ export function DetailCards({ current }: { current: CurrentWeather }) {
   );
 }
 
-function describeDetails(current: CurrentWeather): Detail[] {
+function describeDetails(current: CurrentWeather, airQuality: AirQuality | null): Detail[] {
   const { uvIndex, snowToday } = current;
   const uvLevel = uvIndex === null ? null : uvLevelName(uvIndex);
+  const aqiLevel = airQuality ? getAqiLevel(airQuality.level) : null;
   return [
     {
       label: 'Wind',
@@ -113,6 +115,16 @@ function describeDetails(current: CurrentWeather): Detail[] {
           ? 'Snowfall unavailable'
           : `Snow today, ${formatInches(snowToday)} ${snowToday === 1 ? 'inch' : 'inches'}`,
       icon: { ios: 'snowflake', android: 'ac_unit', web: 'ac_unit' },
+    },
+    {
+      // "42" with "Air · Good". Text stays the usual colors, not color-coded
+      // by level, so it keeps its contrast and matches the other cards.
+      label: aqiLevel ? `Air · ${aqiLevel.label}` : 'Air',
+      value: airQuality ? String(airQuality.aqi) : '–',
+      spoken: airQuality && aqiLevel
+        ? `Air quality index ${airQuality.aqi}, ${aqiLevel.name.toLowerCase()}`
+        : 'Air quality unavailable',
+      icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
     },
   ];
 }

@@ -1,3 +1,4 @@
+import type { AqiLevel } from '@/constants/air-quality';
 import type { ConditionId } from '@/constants/conditions';
 
 // The one weather shape the app uses. Every provider (Open-Meteo, NWS, demo)
@@ -33,12 +34,28 @@ export type HourlyForecast = {
   rainChance: number;
 };
 
+// One day of the 3-day forecast.
+export type DailyForecast = {
+  // The calendar day in the forecast location, "2026-10-15".
+  date: string;
+  // The day's main weather (for the icon and VoiceOver).
+  conditions: ConditionId[];
+  high: number;
+  low: number;
+};
+
 // Today's sunrise and sunset, and tomorrow's sunrise (for the countdown at
 // night), in milliseconds since 1970.
 export type SunTimes = {
   sunrise: number;
   sunset: number;
   tomorrowSunrise: number;
+};
+
+// US Air Quality Index now (0-500), from the separate air quality request.
+export type AirQuality = {
+  aqi: number;
+  level: AqiLevel;
 };
 
 export type WeatherAlert = {
@@ -56,10 +73,18 @@ export type WeatherData = {
   updatedAt: number;
   current: CurrentWeather;
   hourly: HourlyForecast[];
+  // Today and the next two days. Empty if unavailable.
+  daily: DailyForecast[];
   // Missing when the source doesn't give them (NWS); the app then
   // calculates them from the location (src/services/sun-times.ts).
   sun?: SunTimes;
+  // Null when the air quality request failed: the card shows a dash.
+  airQuality: AirQuality | null;
   // The most important active severe weather alert, if any. Only test
   // weather sets this until NWS alert fetching is built.
   alert?: WeatherAlert;
 };
+
+// What a weather provider returns. Air quality comes from its own request
+// (src/services/air-quality.ts), added by src/services/weather.ts.
+export type ProviderWeather = Omit<WeatherData, 'airQuality'>;

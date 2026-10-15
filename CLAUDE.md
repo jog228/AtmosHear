@@ -15,7 +15,7 @@ Each weather condition has its own sound, vibration pattern, and color so users 
 ## Stack
 
 - Expo + TypeScript + Expo Router (routes in `src/app`).
-- Weather: Open-Meteo first, then the NWS API as backup, then the last saved forecast, then demo data (`src/services/weather.ts`). Every provider in `src/services/providers/` returns the shared `WeatherData` type (`src/services/weather-data.ts`); the rest of the app only uses that type. NWS requests must send a User-Agent header. Severe alerts from the NWS API later.
+- Weather: Open-Meteo first, then the NWS API as backup, then the last saved forecast, then demo data (`src/services/weather.ts`). Every provider in `src/services/providers/` returns the shared `WeatherData` type (`src/services/weather-data.ts`); the rest of the app only uses that type. NWS requests must send a User-Agent header. Air quality (US AQI) is a separate Open-Meteo Air Quality request made alongside whichever provider answers (`src/services/air-quality.ts`, levels in `src/constants/air-quality.ts`); `WeatherData.airQuality` is null when it fails, and the last good value is saved separately for offline use. Severe alerts from the NWS API later.
 - `expo-location`, `expo-audio`, `@react-native-async-storage/async-storage`.
 - Vibration uses `expo-haptics` (works in Expo Go). Some patterns move to Core Haptics (AHAP) later in a dev build; until then, everything must run in Expo Go.
 
@@ -62,7 +62,7 @@ Use `design/reference.png` for layout and mood, not as an exact copy:
 - Pale blue-gray background, white rounded cards with soft shadows.
 - Centered header with location subtitle.
 - Large condition illustration, condition name, large temperature.
-- A row of detail cards and a horizontal hourly forecast.
+- A row of detail cards, a horizontal hourly forecast, and a 3-day forecast (`WeatherData.daily`: today and the next two days; NWS builds it by grouping its hourly forecast by day).
 - All text must meet WCAG AA contrast (4.5:1).
 - Light, dark, and high-contrast themes live in `src/constants/theme.ts`. Components only use token names, never hex codes. Dark follows the phone's setting unless overridden in Settings; high contrast overrides both. In dark mode, royalBlue is a fill only, never text.
 - The accent color comes from the current condition, defined in one theme file.
@@ -77,4 +77,4 @@ The app has three native tabs (`src/app/(tabs)/`): Weather (`weather.tsx`), Alar
 
 ## Preferences (opening screen)
 
-The Preferences tab picks which tab the app opens to: Weather from the morning time (AM, default 9:00 AM) until the evening time (PM, default 7:00 PM), Alarms otherwise. The rule is the pure `getStartTab(now, morning, evening)` in `src/features/preferences/opening-time.ts`. `src/app/index.tsx` redirects to the right tab on cold launch (before any tab mounts, so a night launch never starts the weather sound), and `useStartTabOnReturn` in the tab layout does the same after 5+ minutes in the background. Saved in AsyncStorage under `openingPreferences`. Settings › Developer › "Simulate time" overrides the time for this logic only, while Developer mode is on. `src/features/preferences/` must not import weather or alarm code.
+The Preferences tab picks which tab the app opens to: Weather from the morning time (AM, default 9:00 AM) until the evening time (PM, default 7:00 PM), Alarms otherwise. The rule is the pure `getStartTab(now, morning, evening)` in `src/features/preferences/opening-time.ts`. `src/app/index.tsx` redirects to the right tab on cold launch (before any tab mounts, so a night launch never starts the weather sound), and `useStartTabOnReturn` in the tab layout does the same after 5+ minutes in the background. Saved in AsyncStorage under `openingPreferences`. Its name field (optional, up to 15 characters, saved in the same store) personalizes the Weather greeting ("Good morning, Jolie!"). Settings › Developer › "Simulate time" overrides the time for this logic and the Weather screen greeting (`getGreeting` in `src/services/greeting.ts`), while Developer mode is on. `src/features/preferences/` must not import weather or alarm code.

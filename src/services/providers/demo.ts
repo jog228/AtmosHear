@@ -1,8 +1,9 @@
 import type { ConditionId } from '@/constants/conditions';
+import { aqiLevel } from '@/constants/air-quality';
 import { getTestWeatherOption, HOURLY_RAIN_CHANCE, TEST_SUN } from '@/constants/test-weather';
 
-import { formatHour } from '../time';
-import type { HourlyForecast, WeatherData } from '../weather-data';
+import { formatHour, localDateString } from '../time';
+import type { DailyForecast, HourlyForecast, WeatherData } from '../weather-data';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -39,6 +40,23 @@ export function getDemoWeather(
     };
   });
 
+  // Today's range from the same daily curve as the hourly temperatures.
+  // The next two days settle into the forecast's last weather, a couple of
+  // degrees apart so the rows differ. No alert in a day's conditions.
+  const high = Math.round(option.temperature + option.dailySwing * (1 - daily(nowHour)));
+  const low = Math.round(option.temperature - option.dailySwing * (1 + daily(nowHour)));
+  const later = option.forecast[option.forecast.length - 1][0];
+  const days: DailyForecast[] = [
+    { conditions: option.conditions, shift: 0 },
+    { conditions: later, shift: -2 },
+    { conditions: later, shift: 1 },
+  ].map(({ conditions, shift }, i) => ({
+    date: localDateString(new Date(now + i * 24 * HOUR_MS)),
+    conditions: conditions.filter((id) => id !== 'severe-alert'),
+    high: high + shift,
+    low: low + shift,
+  }));
+
   return {
     source,
     locationName,
@@ -55,11 +73,13 @@ export function getDemoWeather(
       snowToday: option.snowToday,
     },
     hourly,
+    daily: days,
     sun: {
       sunrise: todayAt(TEST_SUN.sunrise),
       sunset: todayAt(TEST_SUN.sunset),
       tomorrowSunrise: todayAt(TEST_SUN.tomorrowSunrise) + 24 * HOUR_MS,
     },
+    airQuality: { aqi: option.aqi, level: aqiLevel(option.aqi) },
     // A fresh ID each time, so picking this test weather always beeps.
     alert: option.alert ? { id: `test-${option.id}-${now}`, name: option.alert } : undefined,
   };

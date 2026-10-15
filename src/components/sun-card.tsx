@@ -1,11 +1,10 @@
 import { useCalendars } from 'expo-localization';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { mostSignificant } from '@/constants/condition-priority';
 import { spacing, type Theme } from '@/constants/theme';
-import { useIsForeground } from '@/hooks/use-is-foreground';
+import { useMinuteClock } from '@/hooks/use-minute-clock';
 import { useConditionColor, useTheme } from '@/hooks/use-theme';
 import type { Place } from '@/services/location';
 import { formatDuration, formatTimeOfDay, resolveSunTimes, sunPhase } from '@/services/sun-times';
@@ -90,32 +89,6 @@ function SunTime({
       </View>
     </View>
   );
-}
-
-// The current time, refreshed on each new minute while `active`, and right
-// away when it becomes active again.
-function useMinuteClock(active: boolean): number {
-  const foreground = useIsForeground();
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!active || !foreground) return;
-    const tick = () => setNow(Date.now());
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const catchUp = setTimeout(tick, 0);
-    // Line up with the start of the next minute, then every minute.
-    const align = setTimeout(() => {
-      tick();
-      interval = setInterval(tick, 60_000);
-    }, 60_000 - (Date.now() % 60_000));
-    return () => {
-      clearTimeout(catchUp);
-      clearTimeout(align);
-      clearInterval(interval);
-    };
-  }, [active, foreground]);
-
-  return now;
 }
 
 function createStyles(theme: Theme) {

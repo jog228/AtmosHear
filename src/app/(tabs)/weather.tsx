@@ -3,8 +3,10 @@ import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CurrentConditions } from '@/components/current-conditions';
+import { DailyForecast } from '@/components/daily-forecast';
 import { DetailCards } from '@/components/detail-cards';
 import { GlassBackdrop } from '@/components/glass-backdrop';
+import { Greeting } from '@/components/greeting';
 import { HourlyForecast } from '@/components/hourly-forecast';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
@@ -55,7 +57,12 @@ export default function HomeScreen() {
         },
       ]}
     >
-      <ScreenHeader place={place} weather={weather} developerMode={developerMode} />
+      <ScreenHeader
+        place={place}
+        weather={weather}
+        developerMode={developerMode}
+        greeting={<Greeting weather={weather} place={place} visible={onWeatherTab} />}
+      />
       <CurrentConditions
         current={weather.current}
         alertActive={!!alert}
@@ -75,9 +82,10 @@ export default function HomeScreen() {
         bleed={{ top: 0, sides: spacing.md }}
         style={styles.cards}
       >
-        <DetailCards current={weather.current} />
+        <DetailCards current={weather.current} airQuality={weather.airQuality} />
         <SunCard weather={weather} place={place} visible={onWeatherTab} />
         <HourlyForecast hours={weather.hourly} />
+        <DailyForecast days={weather.daily} />
       </GlassBackdrop>
     </ScrollView>
   );
