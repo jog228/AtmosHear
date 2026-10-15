@@ -8,6 +8,7 @@ import { DetailCards } from '@/components/detail-cards';
 import { GlassBackdrop } from '@/components/glass-backdrop';
 import { Greeting } from '@/components/greeting';
 import { HourlyForecast } from '@/components/hourly-forecast';
+import { LocationLine } from '@/components/location-line';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
 import { SunCard } from '@/components/sun-card';
@@ -58,7 +59,6 @@ export default function HomeScreen() {
       ]}
     >
       <ScreenHeader
-        place={place}
         weather={weather}
         developerMode={developerMode}
         greeting={<Greeting weather={weather} place={place} visible={onWeatherTab} />}
@@ -75,6 +75,7 @@ export default function HomeScreen() {
               }
         }
       />
+      <LocationLine place={place} weather={weather} />
       {/* Only cards go in the backdrop: page text can't sit on the blobs, so
           they spread sideways to the screen edges but never up. */}
       <GlassBackdrop

@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { mostSignificant } from '@/constants/condition-priority';
 import { conditionProfiles, describeConditions } from '@/constants/condition-profiles';
 import { spacing, type Theme } from '@/constants/theme';
+import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
 import type { HourlyForecast as Hour } from '@/services/weather-data';
 
@@ -13,6 +14,7 @@ import { WeatherIcon } from './weather-icon';
 // colored blobs behind the cards.
 export function HourlyForecast({ hours }: { hours: Hour[] }) {
   const styles = createStyles(useTheme());
+  const temperature = useTemperature();
   // A saved forecast may have fewer hours left.
   if (hours.length === 0) return null;
 
@@ -27,12 +29,12 @@ export function HourlyForecast({ hours }: { hours: Hour[] }) {
             key={hour.time}
             style={styles.hourColumn}
             accessible
-            accessibilityLabel={`${hour.hourLabel}, ${describeConditions(hour.conditions)}, ${hour.temperature} degrees, ${hour.rainChance} percent chance of rain`}
+            accessibilityLabel={`${hour.hourLabel}, ${describeConditions(hour.conditions)}, ${temperature.value(hour.temperature)} degrees, ${hour.rainChance} percent chance of rain`}
           >
             <Text style={styles.hour}>{hour.hourLabel}</Text>
             <WeatherIcon conditions={hour.conditions} size={44} />
             <Text style={styles.condition}>{conditionProfiles[mostSignificant(hour.conditions)].label}</Text>
-            <Text style={styles.temperature}>{hour.temperature}°</Text>
+            <Text style={styles.temperature}>{temperature.value(hour.temperature)}°</Text>
             <Text style={styles.rain}>{hour.rainChance}%</Text>
           </View>
         ))}

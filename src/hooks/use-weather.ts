@@ -49,6 +49,13 @@ export function useWeather() {
     };
   }, [testMode, liveSource]);
 
+  // Remember the country of each real location, for Auto °F / °C. Not the
+  // Bethlehem fallback or Developer test weather, which aren't where you are.
+  const country = live.status === 'ready' && !live.place.isFallback ? live.place.countryCode : null;
+  useEffect(() => {
+    if (country && country !== preferences.locationCountry) updatePreferences({ locationCountry: country });
+  }, [country, preferences.locationCountry, updatePreferences]);
+
   // Built instantly, so switching test weather swaps the screen (and
   // crossfades the sound) without a loading state.
   const test = useMemo<WeatherState | null>(

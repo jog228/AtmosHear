@@ -4,11 +4,19 @@ import { DEFAULT_TEST_WEATHER, isTestWeatherId } from '@/constants/test-weather'
 
 export type Appearance = 'system' | 'light' | 'dark';
 
+export type TemperatureUnit = 'fahrenheit' | 'celsius';
+// 'auto': the usual unit in the country you're in (src/hooks/use-temperature.ts).
+export type TemperatureSetting = 'auto' | TemperatureUnit;
+
 // Where Developer mode gets its weather: filler data, or one live provider.
 export type DevWeatherSource = 'test' | 'open-meteo' | 'nws';
 
 export type Preferences = {
   appearance: Appearance;
+  temperatureUnit: TemperatureSetting;
+  // Not a setting: the country of the last live location ("US"), kept so
+  // 'auto' picks the right unit as soon as the app opens.
+  locationCountry: string | null;
   highContrast: boolean;
   ambientSound: boolean;
   vibration: boolean;
@@ -23,6 +31,8 @@ export type Preferences = {
 
 const KEYS: Partial<Record<keyof Preferences, string>> = {
   appearance: 'preferences.appearance',
+  temperatureUnit: 'preferences.temperatureUnit',
+  locationCountry: 'preferences.locationCountry',
   highContrast: 'preferences.highContrast',
   ambientSound: 'preferences.ambientSound',
   vibration: 'preferences.vibration',
@@ -33,6 +43,8 @@ const KEYS: Partial<Record<keyof Preferences, string>> = {
 
 const DEFAULTS: Preferences = {
   appearance: 'system',
+  temperatureUnit: 'auto',
+  locationCountry: null,
   highContrast: false,
   ambientSound: true,
   vibration: true,
@@ -50,6 +62,11 @@ export async function loadPreferences(): Promise<Preferences> {
     return {
       ...DEFAULTS,
       appearance: saved.appearance === 'light' || saved.appearance === 'dark' ? saved.appearance : DEFAULTS.appearance,
+      temperatureUnit:
+        saved.temperatureUnit === 'fahrenheit' || saved.temperatureUnit === 'celsius'
+          ? saved.temperatureUnit
+          : DEFAULTS.temperatureUnit,
+      locationCountry: saved.locationCountry || null,
       highContrast: saved.highContrast === 'true',
       // On unless the user turned it off.
       ambientSound: saved.ambientSound !== 'false',

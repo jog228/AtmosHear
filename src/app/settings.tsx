@@ -7,7 +7,8 @@ import { SegmentedControl, SettingsSection, SwitchRow } from '@/components/setti
 import { spacing, type Theme } from '@/constants/theme';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useThemeSettings } from '@/hooks/use-theme';
-import type { Appearance } from '@/services/preferences';
+import { useTemperature } from '@/hooks/use-temperature';
+import type { Appearance, TemperatureSetting } from '@/services/preferences';
 
 const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -15,10 +16,17 @@ const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
+const TEMPERATURE_OPTIONS: { value: TemperatureSetting; label: string; spoken: string }[] = [
+  { value: 'auto', label: 'Auto', spoken: 'Automatic' },
+  { value: 'fahrenheit', label: '°F', spoken: 'Fahrenheit' },
+  { value: 'celsius', label: '°C', spoken: 'Celsius' },
+];
+
 export default function SettingsScreen() {
   const { theme, appearance, setAppearance, highContrast, setHighContrast } = useThemeSettings();
   const styles = createStyles(theme);
   const { preferences, updatePreferences } = usePreferences();
+  const temperature = useTemperature();
 
   return (
     <GlassBackdrop style={styles.screen}>
@@ -33,6 +41,20 @@ export default function SettingsScreen() {
           />
           {highContrast && (
             <Text style={styles.note}>High contrast is on, so it’s used instead of this setting.</Text>
+          )}
+        </SettingsSection>
+
+        <SettingsSection title="Temperature">
+          <SegmentedControl
+            options={TEMPERATURE_OPTIONS}
+            selected={preferences.temperatureUnit}
+            onSelect={(value) => updatePreferences({ temperatureUnit: value })}
+            accessibilityLabel="Temperature unit"
+          />
+          {preferences.temperatureUnit === 'auto' && (
+            <Text style={styles.note}>
+              Uses the usual unit where you are: <Text style={styles.highlight}>°{temperature.letter}</Text>
+            </Text>
           )}
         </SettingsSection>
 
@@ -87,6 +109,12 @@ function createStyles(theme: Theme) {
       fontSize: 14,
       color: theme.colors.textSecondary,
       marginLeft: spacing.xs,
+    },
+    // Same color as "opens to: Weather" on the Preferences page (passes
+    // 4.5:1 in every theme).
+    highlight: {
+      fontWeight: '600',
+      color: theme.colors.buttonBackground,
     },
   });
 }

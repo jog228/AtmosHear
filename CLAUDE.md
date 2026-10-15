@@ -50,6 +50,7 @@ Alerts are separate from the ambient condition sounds. `assets/sounds/severe-ale
 - Demo mode to force any condition.
 - Sound-only / vibration-only / light-only modes.
 - High-contrast theme.
+- °F / °C setting (Settings › Temperature: Auto, °F, °C). Auto (default) uses the usual unit in the country of the last live location (`src/constants/temperature-units.ts`, country saved as `locationCountry`), or the phone region's before the first one. Weather data stays in °F; components convert for display with `useTemperature()`.
 
 ## Developer mode
 
@@ -60,7 +61,7 @@ Settings › Developer replaces live weather with filler data for testing and pr
 Use `design/reference.png` for layout and mood, not as an exact copy:
 
 - Pale blue-gray background, white rounded cards with soft shadows.
-- Centered header with location subtitle.
+- Centered header (title and greeting); the location sits under the temperature, above the detail cards.
 - Large condition illustration, condition name, large temperature.
 - A row of detail cards, a horizontal hourly forecast, and a 3-day forecast (`WeatherData.daily`: today and the next two days; NWS builds it by grouping its hourly forecast by day).
 - All text must meet WCAG AA contrast (4.5:1).

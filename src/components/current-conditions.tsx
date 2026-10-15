@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { mostSignificant } from '@/constants/condition-priority';
 import { conditionProfiles, describeConditions } from '@/constants/condition-profiles';
 import { spacing, type Theme } from '@/constants/theme';
+import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
 import type { CurrentWeather } from '@/services/weather-data';
 
@@ -18,6 +19,7 @@ type Props = {
 
 export function CurrentConditions({ current, alertActive, onReplay }: Props) {
   const styles = createStyles(useTheme());
+  const temperature = useTemperature();
   const description = describeConditions(current.conditions);
   const label = conditionProfiles[mostSignificant(current.conditions)].label.toLowerCase();
 
@@ -34,11 +36,18 @@ export function CurrentConditions({ current, alertActive, onReplay }: Props) {
       >
         <WeatherIcon conditions={current.conditions} size={220} />
       </Pressable>
-      <View accessible accessibilityLabel={`${description}, ${current.temperature} degrees Fahrenheit`}>
+      <View accessible accessibilityLabel={`${description}, ${temperature.value(current.temperature)} degrees ${temperature.name}`}>
         <Text style={styles.condition}>{description}</Text>
-        <Text style={styles.temperature} maxFontSizeMultiplier={1.3}>
-          {current.temperature}°
-        </Text>
+        {/* "72°F": the unit is smaller and raised, and the whole thing is
+            centered together. */}
+        <View style={styles.temperatureRow}>
+          <Text style={styles.temperature} maxFontSizeMultiplier={1.3}>
+            {temperature.value(current.temperature)}
+          </Text>
+          <Text style={styles.unit} maxFontSizeMultiplier={1.3}>
+            °{temperature.letter}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -60,6 +69,18 @@ function createStyles(theme: Theme) {
       fontWeight: '600',
       color: theme.colors.textPrimary,
       textAlign: 'center',
+    },
+    temperatureRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    },
+    unit: {
+      fontSize: 40,
+      fontWeight: '300',
+      color: theme.colors.largeNumber,
+      // Lines the unit up with the top of the numbers.
+      marginTop: 14,
     },
     temperature: {
       fontSize: 88,

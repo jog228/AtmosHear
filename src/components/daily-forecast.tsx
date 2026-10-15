@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { describeConditions } from '@/constants/condition-profiles';
 import { spacing, type Theme } from '@/constants/theme';
+import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
 import { localDateString } from '@/services/time';
 import type { DailyForecast as Day } from '@/services/weather-data';
@@ -16,6 +17,7 @@ const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 // hourly forecast, heading inside.
 export function DailyForecast({ days }: { days: Day[] }) {
   const styles = createStyles(useTheme());
+  const temperature = useTemperature();
   if (days.length === 0) return null;
   const today = localDateString();
 
@@ -31,13 +33,13 @@ export function DailyForecast({ days }: { days: Day[] }) {
             key={day.date}
             style={[styles.row, i > 0 && styles.divider]}
             accessible
-            accessibilityLabel={`${full}, ${describeConditions(day.conditions)}, high ${day.high} degrees, low ${day.low} degrees`}
+            accessibilityLabel={`${full}, ${describeConditions(day.conditions)}, high ${temperature.value(day.high)} degrees, low ${temperature.value(day.low)} degrees`}
           >
             <Text style={styles.day}>{short}</Text>
             <WeatherIcon conditions={day.conditions} size={40} />
             <View style={styles.temperatures}>
-              <Text style={styles.high}>H {day.high}°</Text>
-              <Text style={styles.low}>L {day.low}°</Text>
+              <Text style={styles.high}>H {temperature.value(day.high)}°</Text>
+              <Text style={styles.low}>L {temperature.value(day.low)}°</Text>
             </View>
           </View>
         );

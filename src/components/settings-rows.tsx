@@ -103,7 +103,8 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
   accessibilityHint,
 }: {
-  options: { value: T; label: string }[];
+  // `spoken` replaces the label for screen readers, e.g. "Celsius" for "°C".
+  options: { value: T; label: string; spoken?: string }[];
   selected: T;
   onSelect: (value: T) => void;
   accessibilityLabel: string;
@@ -123,7 +124,7 @@ export function SegmentedControl<T extends string>({
               onPress={() => onSelect(option.value)}
               accessibilityRole="radio"
               accessibilityState={{ checked: isSelected }}
-              accessibilityLabel={option.label}
+              accessibilityLabel={option.spoken ?? option.label}
               accessibilityHint={accessibilityHint}
             >
               <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, useWindowDimensions, type LayoutChangeEve
 import { getAqiLevel } from '@/constants/air-quality';
 import { mostSignificant } from '@/constants/condition-priority';
 import { spacing, type Theme } from '@/constants/theme';
+import { useTemperature } from '@/hooks/use-temperature';
 import { useConditionColor, useTheme } from '@/hooks/use-theme';
 import type { AirQuality, CurrentWeather } from '@/services/weather-data';
 
@@ -40,7 +41,8 @@ export function DetailCards({ current, airQuality }: { current: CurrentWeather; 
   const width = rowWidth ?? windowWidth;
   const cardWidth = (width - BLEED - VISIBLE_CARDS * GAP) / (VISIBLE_CARDS + PEEK);
 
-  const details = describeDetails(current, airQuality);
+  const temperature = useTemperature();
+  const details = describeDetails(current, airQuality, temperature.value(current.feelsLike));
 
   return (
     <ScrollView
@@ -70,7 +72,8 @@ export function DetailCards({ current, airQuality }: { current: CurrentWeather; 
   );
 }
 
-function describeDetails(current: CurrentWeather, airQuality: AirQuality | null): Detail[] {
+// `feelsLike` is already in the chosen unit.
+function describeDetails(current: CurrentWeather, airQuality: AirQuality | null, feelsLike: number): Detail[] {
   const { uvIndex, snowToday } = current;
   const uvLevel = uvIndex === null ? null : uvLevelName(uvIndex);
   const aqiLevel = airQuality ? getAqiLevel(airQuality.level) : null;
@@ -95,8 +98,8 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null)
     },
     {
       label: 'Feels like',
-      value: `${current.feelsLike}°`,
-      spoken: `Feels like, ${current.feelsLike} degrees`,
+      value: `${feelsLike}°`,
+      spoken: `Feels like, ${feelsLike} degrees`,
       icon: { ios: 'thermometer.medium', android: 'thermometer', web: 'thermometer' },
     },
     {

@@ -4,6 +4,9 @@ export type Place = {
   latitude: number;
   longitude: number;
   name: string;
+  // ISO country code, e.g. "US", for the automatic °F / °C choice. Null
+  // if unknown.
+  countryCode: string | null;
   isFallback: boolean;
 };
 
@@ -11,6 +14,7 @@ export const FALLBACK_PLACE: Place = {
   latitude: 40.6259,
   longitude: -75.3705,
   name: 'Bethlehem, PA',
+  countryCode: 'US',
   isFallback: true,
 };
 
@@ -31,19 +35,19 @@ export async function getPlace(): Promise<Place> {
       ));
 
     const { latitude, longitude } = position.coords;
-    return { latitude, longitude, name: await getPlaceName(latitude, longitude), isFallback: false };
+    return { latitude, longitude, ...(await describePlace(latitude, longitude)), isFallback: false };
   } catch {
     return FALLBACK_PLACE;
   }
 }
 
-async function getPlaceName(latitude: number, longitude: number): Promise<string> {
+async function describePlace(latitude: number, longitude: number): Promise<Pick<Place, 'name' | 'countryCode'>> {
   try {
     const [address] = await Location.reverseGeocodeAsync({ latitude, longitude });
     const name = [address?.city ?? address?.subregion, address?.region].filter(Boolean).join(', ');
-    return name || 'Your location';
+    return { name: name || 'Your location', countryCode: address?.isoCountryCode ?? null };
   } catch {
-    return 'Your location';
+    return { name: 'Your location', countryCode: null };
   }
 }
 

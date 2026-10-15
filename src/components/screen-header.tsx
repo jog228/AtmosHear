@@ -5,22 +5,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { Place } from '@/services/location';
 import { formatSavedTime } from '@/services/time';
 import type { WeatherData } from '@/services/weather-data';
 
 import { MuteButton } from './mute-button';
 
 type Props = {
-  place: Place;
   weather: WeatherData;
   // Shows a "Developer mode" pill so test weather is never mistaken for real.
   developerMode: boolean;
-  // Shown under the location, e.g. the time-of-day greeting.
+  // Shown under the title, e.g. the time-of-day greeting.
   greeting?: ReactNode;
 };
 
-export function ScreenHeader({ place, weather, developerMode, greeting }: Props) {
+export function ScreenHeader({ weather, developerMode, greeting }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const source = describeSource(weather);
@@ -39,11 +37,7 @@ export function ScreenHeader({ place, weather, developerMode, greeting }: Props)
           <Text style={styles.pillText}>Developer mode</Text>
         </View>
       )}
-      <Text style={styles.location}>{weather.locationName}</Text>
       {greeting}
-      {place.isFallback && (
-        <Text style={styles.note}>Location unavailable, showing default</Text>
-      )}
       {showSource && (
         <Text style={styles.note} accessibilityLabel={source.spoken}>
           {source.label}
@@ -91,7 +85,7 @@ function describeSource(weather: WeatherData): { label: string; spoken: string }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    // Title, location, and greeting as one group, with the same small gap
+    // Title and greeting as one group, with the same small gap
     // between each. The side padding matches the buttons' width on both
     // sides, so text stays centered and never runs under them. Extra room
     // below (32 in all) sets the group apart from the weather icon.
@@ -117,10 +111,6 @@ function createStyles(theme: Theme) {
       fontSize: 13,
       fontWeight: '700',
       color: theme.colors.heading,
-    },
-    location: {
-      fontSize: 16,
-      color: theme.colors.textSecondary,
     },
     note: {
       fontSize: 13,
