@@ -1,3 +1,4 @@
+import { usePathname } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,14 +18,18 @@ import { useWeather } from '@/hooks/use-weather';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, reload, developerMode } = useWeather();
+  // Weather sound and vibration stop on the Alarms tab (the sound fades
+  // out, then back in on return). Settings, opened from here, keeps them.
+  const onWeatherTab = usePathname() !== '/alarms';
+  const conditions = state.status === 'ready' && onWeatherTab ? state.weather.current.conditions : [];
   // Every current condition with a sound plays as its own layer.
-  const { replay } = useConditionSound(state.status === 'ready' ? sortByPriority(state.weather.current.conditions) : []);
+  const { replay } = useConditionSound(sortByPriority(conditions));
   // Severe alerts beep separately, over the conditions underneath them.
   const alert = state.status === 'ready' ? state.weather.alert : undefined;
   const { replay: replayAlert } = useAlertSound(alert);
   // Each condition's vibration pattern; the alert vibrates with its beeps.
   const { replay: replayHaptics } = useConditionHaptics(
-    state.status === 'ready' ? state.weather.current.conditions.filter((id) => id !== 'severe-alert') : [],
+    conditions.filter((id) => id !== 'severe-alert'),
     !!alert,
   );
 

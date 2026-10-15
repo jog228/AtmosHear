@@ -17,6 +17,9 @@ export const palette = {
   sun: '#FFBF4A',
   white: '#FFFFFF',
   mist: '#E8EDF2', // pale blue-gray page background
+  // TODO: awaiting final red from design team. Delete actions only: 6.5:1
+  // with white text on it, 5.5:1 as text on mist.
+  red: '#B3261E',
 };
 
 // Dark palette. Contrast rules (WCAG AA) on the navy background:
@@ -35,6 +38,9 @@ export const darkPalette = {
   black: '#000000',
   gray: '#B8BAC2',
   white: '#FFFFFF',
+  // TODO: awaiting final red from design team. Delete actions only, also
+  // in high contrast: 7.1:1 as text on navy, 7.6:1 with ink text on it.
+  red: '#FF7B72',
 };
 
 export type ThemeName = 'light' | 'dark' | 'highContrast';

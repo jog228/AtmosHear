@@ -1,0 +1,89 @@
+import { darkPalette, palette, withAlpha, type ThemeName } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+
+// The Alarms tab's colors, built only from the app's base palette (no
+// weather condition colors). Picked by the current theme name, so light,
+// dark, and high contrast all work. Every text color passes WCAG AA
+// (4.5:1) on its background, including dimmed (switched-off) alarms.
+export type AlarmColors = {
+  background: string;
+  card: string;
+  cardBorderWidth: number;
+  separator: string;
+  // Big times and labels.
+  text: string;
+  secondaryText: string;
+  // Switched-off alarms: dimmer, but still 4.5:1 or better.
+  dimmedText: string;
+  // Text buttons (Edit, Done, +, Cancel, Save) and switched-on switches.
+  accent: string;
+  switchOff: string;
+  switchThumbOn: string;
+  switchThumbOff: string;
+  // Delete actions: the fill, and text or icons on top of it.
+  danger: string;
+  onDanger: string;
+  // A gentle notice (e.g. duplicate alarm).
+  notice: string;
+};
+
+const COLORS: Record<ThemeName, AlarmColors> = {
+  light: {
+    background: palette.mist,
+    card: palette.white,
+    cardBorderWidth: 0,
+    separator: withAlpha(palette.gray, 0.5),
+    text: palette.ink,
+    secondaryText: palette.slate,
+    // 8.8:1 on white. gray would look more like Apple's but fails AA.
+    dimmedText: palette.slate,
+    accent: palette.deepBlue,
+    // 3.1:1 on white, enough for a control.
+    switchOff: palette.gray,
+    switchThumbOn: palette.white,
+    switchThumbOff: palette.white,
+    danger: palette.red,
+    onDanger: palette.white,
+    notice: palette.slate,
+  },
+  dark: {
+    background: darkPalette.navy,
+    card: darkPalette.navyCard,
+    cardBorderWidth: 0,
+    separator: withAlpha(darkPalette.gray, 0.3),
+    text: darkPalette.white,
+    secondaryText: darkPalette.gray,
+    // 7.8:1 on navyCard.
+    dimmedText: darkPalette.gray,
+    accent: darkPalette.yellow,
+    switchOff: withAlpha(darkPalette.gray, 0.4),
+    // Navy on the yellow track; white when off.
+    switchThumbOn: darkPalette.navy,
+    switchThumbOff: darkPalette.white,
+    danger: darkPalette.red,
+    onDanger: darkPalette.navy,
+    notice: darkPalette.gray,
+  },
+  // Solid colors and thick borders.
+  highContrast: {
+    background: palette.ink,
+    card: palette.ink,
+    cardBorderWidth: 2,
+    separator: palette.white,
+    text: palette.white,
+    secondaryText: palette.white,
+    // 6.3:1 on ink.
+    dimmedText: palette.gray,
+    accent: palette.sun,
+    switchOff: palette.white,
+    switchThumbOn: palette.ink,
+    switchThumbOff: palette.ink,
+    danger: darkPalette.red,
+    onDanger: palette.ink,
+    notice: palette.white,
+  },
+};
+
+export function useAlarmColors(): AlarmColors {
+  return COLORS[useTheme().name];
+}

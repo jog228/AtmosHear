@@ -70,3 +70,7 @@ Use `design/reference.png` for layout and mood, not as an exact copy:
 ## Code organization
 
 Keep files small: screens in `src/app/`, UI in `src/components/`, API calls and data logic in `src/services/`, static mappings and theme in `src/constants/`.
+
+## Alarms
+
+The app has two native tabs (`src/app/(tabs)/`): Weather (`index.tsx`) and Alarms (`alarms.tsx`). Settings and the test-weather sheet stay on the root stack above the tabs. The Alarms tab is an Apple Clock-style alarm list; alarms don't ring yet (no notifications). All alarm code lives in `src/features/alarms/` and must not import weather code: it only uses the base palette (`palette`/`darkPalette` via `alarm-colors.ts`, no condition colors) and `useTheme`. Alarms are saved in AsyncStorage under `alarms.list`. The weather screen passes no conditions to its sound and haptics hooks while the Alarms tab is showing, so ambient sound fades out there and back in on return.
