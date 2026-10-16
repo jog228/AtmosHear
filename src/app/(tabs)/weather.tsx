@@ -1,31 +1,36 @@
 import { usePathname } from 'expo-router';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CurrentConditions } from '@/components/current-conditions';
 import { DailyForecast } from '@/components/daily-forecast';
 import { DetailCards } from '@/components/detail-cards';
-import { GlassBackdrop } from '@/components/glass-backdrop';
 import { Greeting } from '@/components/greeting';
 import { HourlyForecast } from '@/components/hourly-forecast';
-import { LocationLine } from '@/components/location-line';
+import { LocationLine, LocationNote } from '@/components/location-line';
 import { ScreenHeader } from '@/components/screen-header';
 import { ErrorState, LoadingState } from '@/components/status-states';
 import { SunCard } from '@/components/sun-card';
-import { mostSignificant, sortByPriority } from '@/constants/condition-priority';
+import { sortByPriority } from '@/constants/condition-priority';
 import { spacing } from '@/constants/theme';
 import { useAlertSound } from '@/hooks/use-alert-sound';
 import { useConditionHaptics } from '@/hooks/use-condition-haptics';
 import { useConditionSound } from '@/hooks/use-condition-sound';
 import { useWeather } from '@/hooks/use-weather';
+import { localDateString } from '@/services/time';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, reload, developerMode } = useWeather();
   // Weather sound and vibration stop on the other tabs (the sound fades
-  // out, then back in on return). Settings, opened from here, keeps them.
+  // out, then back in on return). A screen opened on top keeps the tab it
+  // came from: Feel & hear (from here) keeps them, the test weather sheet
+  // (from Preferences) stays quiet.
   const pathname = usePathname();
-  const onWeatherTab = pathname !== '/alarms' && pathname !== '/preferences';
+  const [tab, setTab] = useState(pathname);
+  if (TAB_PATHS.includes(pathname) && pathname !== tab) setTab(pathname);
+  const onWeatherTab = tab !== '/alarms' && tab !== '/preferences';
   const conditions = state.status === 'ready' && onWeatherTab ? state.weather.current.conditions : [];
   // Every current condition with a sound plays as its own layer.
   const { replay } = useConditionSound(sortByPriority(conditions));
@@ -58,48 +63,48 @@ export default function HomeScreen() {
         },
       ]}
     >
-      <ScreenHeader
-        weather={weather}
-        developerMode={developerMode}
-        greeting={<Greeting weather={weather} place={place} visible={onWeatherTab} />}
-      />
-      <CurrentConditions
-        current={weather.current}
-        alertActive={!!alert}
-        onReplay={
-          alert
-            ? replayAlert
-            : () => {
-                replay();
-                replayHaptics();
-              }
-        }
-      />
-      <LocationLine place={place} weather={weather} />
-      {/* Only cards go in the backdrop: page text can't sit on the blobs, so
-          they spread sideways to the screen edges but never up. */}
-      <GlassBackdrop
-        condition={mostSignificant(weather.current.conditions)}
-        bleed={{ top: 0, sides: spacing.md }}
-        style={styles.cards}
-      >
-        <DetailCards current={weather.current} airQuality={weather.airQuality} />
-        <SunCard weather={weather} place={place} visible={onWeatherTab} />
-        <HourlyForecast hours={weather.hourly} />
-        <DailyForecast days={weather.daily} />
-      </GlassBackdrop>
+      {/* Header, hero, and temperature sit close together, like the frame. */}
+      <View style={styles.top}>
+        <ScreenHeader
+          weather={weather}
+          developerMode={developerMode}
+          location={<LocationLine weather={weather} />}
+          locationNote={<LocationNote place={place} />}
+          greeting={<Greeting weather={weather} place={place} visible={onWeatherTab} />}
+        />
+        <CurrentConditions
+          current={weather.current}
+          // A saved forecast's first day may be yesterday: match today's date.
+          today={weather.daily.find((day) => day.date === localDateString())}
+          alertActive={!!alert}
+          visible={onWeatherTab}
+          onReplay={
+            alert
+              ? replayAlert
+              : () => {
+                  replay();
+                  replayHaptics();
+                }
+          }
+        />
+      </View>
+      <DetailCards current={weather.current} airQuality={weather.airQuality} />
+      <SunCard weather={weather} place={place} visible={onWeatherTab} />
+      <HourlyForecast hours={weather.hourly} />
+      <DailyForecast days={weather.daily} />
     </ScrollView>
   );
 }
 
 const IOS = Platform.OS === 'ios';
+const TAB_PATHS = ['/weather', '/alarms', '/preferences'];
 
 const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
     paddingHorizontal: spacing.md,
   },
-  cards: {
-    gap: spacing.lg,
+  top: {
+    gap: spacing.sm,
   },
 });

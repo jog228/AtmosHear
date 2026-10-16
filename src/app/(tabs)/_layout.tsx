@@ -4,8 +4,9 @@ import { useStartTabOnReturn } from '@/features/preferences/use-start-tab-on-ret
 import { useTheme } from '@/hooks/use-theme';
 
 // Three tabs: Weather, Alarms, and Preferences. Native tabs, so VoiceOver
-// reads "Weather, tab, 1 of 3" and the selected state on its own. Settings
-// opens above the tabs (see src/app/_layout.tsx). The starting tab comes
+// reads "Weather, tab, 1 of 3" and the selected state on its own. Cue
+// screens and the test weather sheet open above the tabs (see
+// src/app/_layout.tsx). The starting tab comes
 // from Preferences: src/app/index.tsx on launch, and the hook below after
 // 5+ minutes in the background.
 export default function TabsLayout() {
@@ -13,6 +14,8 @@ export default function TabsLayout() {
   useStartTabOnReturn();
 
   return (
+    // The selected tab uses the button color: deepBlue in light mode, like
+    // the frames (yellow in dark, sun in high contrast, so it stays visible).
     <NativeTabs
       backgroundColor={colors.card}
       tintColor={colors.buttonBackground}

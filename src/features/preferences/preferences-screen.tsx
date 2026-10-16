@@ -1,10 +1,10 @@
 import { useCalendars } from 'expo-localization';
-import { SymbolView } from 'expo-symbols';
-import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { radius, spacing, type Theme } from '@/constants/theme';
+import { RowGroup, SettingsSection, ValueRow } from '@/components/settings-rows';
+import { LARGE_TEXT_MAX_SCALE, spacing, typography, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { NameField } from './name-field';
@@ -16,12 +16,45 @@ const TAB_NAMES = { weather: 'Weather', alarms: 'Alarms' };
 
 type Editing = 'morning' | 'evening' | null;
 
-// The Preferences tab: which screen AtmosHear opens to by time of day.
-// Always on; the user only picks the two switch-over times.
-export function PreferencesScreen() {
+// The Preferences tab's page: the big title, then the sections passed in.
+// src/app/(tabs)/preferences.tsx puts this feature's sections and the
+// app-wide ones (src/components/app-settings.tsx) in order.
+export function PreferencesPage({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.content}
+        // Tapping outside the name field closes the keyboard (and saves).
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        <Text style={styles.title} accessibilityRole="header" maxFontSizeMultiplier={LARGE_TEXT_MAX_SCALE}>
+          Preferences
+        </Text>
+        {children}
+      </ScrollView>
+    </View>
+  );
+}
+
+// An optional name for the Weather greeting.
+export function NameSection() {
+  return (
+    <SettingsSection title="Name">
+      <NameField />
+    </SettingsSection>
+  );
+}
+
+// Which screen AtmosHear opens to by time of day. Always on; the user only
+// picks the two switch-over times.
+export function OpeningScreenSection() {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   const uses24Hour = useCalendars()[0]?.uses24hourClock ?? false;
   const { morning, evening, simulatedTime, update, startTab } = useOpeningPreferences();
   const [editing, setEditing] = useState<Editing>(null);
@@ -57,66 +90,30 @@ export function PreferencesScreen() {
   ];
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-        // Tapping outside the name field closes the keyboard (and saves).
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        <Text style={styles.title} accessibilityRole="header">
-          Preferences
+    <SettingsSection title="Opening screen">
+      <Text style={styles.explanation}>Morning opens to Weather. Evening opens to Alarms.</Text>
+
+      <RowGroup>
+        {rows.map((row, i) => (
+          <ValueRow
+            key={row.id}
+            label={row.name}
+            value={formatClockTime(row.time, uses24Hour)}
+            accessibilityHint="Opens a time picker"
+            onPress={() => open(row.id)}
+            divider={i > 0}
+          />
+        ))}
+      </RowGroup>
+
+      <Text style={styles.status} accessibilityLiveRegion="polite">
+        Right now, AtmosHear opens to: <Text style={styles.destination}>{opensTo}</Text>
+      </Text>
+      {simulatedTime && (
+        <Text style={styles.explanation}>
+          Using a simulated time of {formatClockTime(simulatedTime, uses24Hour)} (Developer, below).
         </Text>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Name
-          </Text>
-          <NameField />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Opening screen
-          </Text>
-          <Text style={styles.explanation}>Morning opens to Weather. Evening opens to Alarms.</Text>
-
-          <View style={styles.group}>
-            {rows.map((row, i) => {
-              const value = formatClockTime(row.time, uses24Hour);
-              return (
-                <Pressable
-                  key={row.id}
-                  style={({ pressed }) => [styles.row, i > 0 && styles.divider, pressed && styles.pressed]}
-                  onPress={() => open(row.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${row.name}, ${value}`}
-                  accessibilityHint="Opens a time picker"
-                >
-                  <Text style={styles.rowLabel}>{row.name}</Text>
-                  <Text style={styles.rowValue}>{value}</Text>
-                  <SymbolView
-                    name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                    size={14}
-                    tintColor={theme.colors.textSecondary}
-                    accessible={false}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.status} accessibilityLiveRegion="polite">
-            Right now, AtmosHear opens to: <Text style={styles.destination}>{opensTo}</Text>
-          </Text>
-          {simulatedTime && (
-            <Text style={styles.explanation}>
-              Using a simulated time of {formatClockTime(simulatedTime, uses24Hour)} (Settings › Developer).
-            </Text>
-          )}
-        </View>
-      </ScrollView>
+      )}
 
       <TimePickerSheet
         key={sheetKey}
@@ -134,7 +131,7 @@ export function PreferencesScreen() {
         }}
         onClose={() => setEditing(null)}
       />
-    </View>
+    </SettingsSection>
   );
 }
 
@@ -149,63 +146,20 @@ function createStyles(theme: Theme) {
       paddingHorizontal: spacing.md,
       paddingTop: spacing.xl,
       paddingBottom: spacing.xl,
-      gap: spacing.lg,
+      gap: spacing.xl,
     },
     title: {
-      fontSize: 34,
-      fontWeight: '700',
+      ...typography.h1,
       color: colors.textPrimary,
-    },
-    section: {
-      gap: spacing.sm,
-    },
-    sectionTitle: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.heading,
-      marginLeft: spacing.xs,
     },
     explanation: {
-      fontSize: 15,
-      color: colors.textSecondary,
-      marginLeft: spacing.xs,
-    },
-    group: {
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
-      borderWidth: theme.cardBorderWidth,
-      borderColor: colors.border,
-      overflow: 'hidden',
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-      minHeight: 56,
-      paddingHorizontal: spacing.md,
-    },
-    divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colors.border,
-    },
-    pressed: {
-      opacity: 0.6,
-    },
-    rowLabel: {
-      flex: 1,
-      fontSize: 17,
-      color: colors.textPrimary,
-    },
-    rowValue: {
-      fontSize: 17,
+      ...typography.body,
       color: colors.textSecondary,
     },
     status: {
-      fontSize: 17,
+      ...typography.body,
       fontWeight: '600',
       color: colors.textPrimary,
-      marginLeft: spacing.xs,
-      marginTop: spacing.sm,
     },
     // Deep blue in light mode, yellow in dark, the high-contrast accent
     // (sun) in high contrast. All pass 4.5:1 on the page background.

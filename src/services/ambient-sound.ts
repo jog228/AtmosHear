@@ -9,9 +9,9 @@ export const AMBIENT_VOLUME = 0.6;
 // Quieter while VoiceOver/TalkBack is on, so it doesn't compete with speech.
 export const AMBIENT_VOLUME_SCREEN_READER = 0.3;
 const FADE_IN_MS = 1500; // launch, returning to the app
-const TURN_ON_MS = 1000; // unmuting (home screen button or Settings toggle)
+const TURN_ON_MS = 1000; // unmuting (home screen button or Preferences toggle)
 const CROSSFADE_MS = 1000; // condition changes
-const TURN_OFF_MS = 300; // muting (home screen button or Settings toggle)
+const TURN_OFF_MS = 300; // muting (home screen button or Preferences toggle)
 const VOLUME_CHANGE_MS = 500; // screen reader turned on/off
 const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
 const DUCK_MS = 200; // severe alert starting
@@ -39,6 +39,11 @@ class AmbientSound {
   private volume = AMBIENT_VOLUME;
   private ducked = false;
   private enabled = true;
+  // What the Weather screen asked for, kept while a preview plays so it can
+  // come back after.
+  private requested: AmbientState = { conditions: [], enabled: true, foreground: true, volume: AMBIENT_VOLUME };
+  // A cue preview (Sound library, Feel & hear) replaces the Weather loop.
+  private previewing: ConditionId | null = null;
 
   // Plays even with the ringer switch on silent: only the volume buttons
   // and the in-app toggle control it. Other apps' audio keeps playing.
@@ -51,7 +56,32 @@ class AmbientSound {
     });
   }
 
-  update({ conditions, enabled, foreground, volume }: AmbientState) {
+  // The Weather screen's sounds. While a preview plays, this is saved and
+  // applied when the preview ends.
+  update(state: AmbientState) {
+    this.requested = state;
+    this.apply();
+  }
+
+  // Plays one condition's sound on its own as a preview, crossfading from
+  // the Weather loop (whose layers pause, ready to resume). Previews are
+  // something the user asked to hear, so they play even with "Ambient
+  // sound" off. A condition without a sound file previews as silence. Pass
+  // null to end the preview and crossfade back.
+  setPreview(id: ConditionId | null) {
+    if (id === this.previewing) return;
+    this.previewing = id;
+    this.apply();
+  }
+
+  private apply() {
+    const preview = this.previewing;
+    const state = preview ? { ...this.requested, conditions: [preview], enabled: true } : this.requested;
+    // Layers to keep loaded while paused: the Weather screen's.
+    this.applyState(state, preview ? this.requested.conditions : []);
+  }
+
+  private applyState({ conditions, enabled, foreground, volume }: AmbientState, keep: ConditionId[]) {
     // Conditions without a sound file are skipped.
     const wanted = enabled && foreground ? conditions.filter((id) => conditionProfiles[id].sound) : [];
     // Adding, removing, or swapping layers while sound is playing crossfades
@@ -66,7 +96,7 @@ class AmbientSound {
     // to the background (timers don't run there).
     for (const [id, layer] of this.layers) {
       if (wanted.includes(id)) continue;
-      const conditionEnded = !conditions.includes(id);
+      const conditionEnded = !conditions.includes(id) && !keep.includes(id);
       const fadeMs = !foreground ? 0 : !enabled ? TURN_OFF_MS : CROSSFADE_MS;
       const curve = fadeMs === CROSSFADE_MS ? 'equalPower' : 'linear';
       this.fade(layer, 0, fadeMs, curve, () => {

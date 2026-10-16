@@ -1,14 +1,16 @@
 import { SymbolView } from 'expo-symbols';
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View, type ViewProps } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { radius, spacing, type Theme } from '@/constants/theme';
+import { cardShadow, radius, spacing, typography, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { GlassCard } from './glass-card';
-
-// Building blocks for the Settings screen, so every row looks and reads the
-// same to screen readers.
+// Building blocks for the Preferences tab, so every row looks and reads the
+// same to screen readers. Styled after design/frames/12_Preferences.png:
+// rows sit on the page background between thin lines, with a bold title,
+// an optional subtitle, and a control on the right. Only uses the theme, so
+// src/features/preferences can use it too.
 
 export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   const styles = createStyles(useTheme());
@@ -20,6 +22,13 @@ export function SettingsSection({ title, children }: { title: string; children: 
       {children}
     </View>
   );
+}
+
+// A run of rows with a line above, below, and between them (give every row
+// after the first `divider`).
+export function RowGroup({ style, ...rest }: ViewProps) {
+  const styles = createStyles(useTheme());
+  return <View style={[styles.group, style]} {...rest} />;
 }
 
 type SwitchRowProps = {
@@ -35,11 +44,10 @@ type SwitchRowProps = {
 
 // The whole row is the switch, so it's a big target and reads as one item.
 export function SwitchRow({ label, description, accessibilityLabel, accessibilityHint, value, onValueChange, divider }: SwitchRowProps) {
-  const theme = useTheme();
-  const styles = createStyles(theme);
+  const styles = createStyles(useTheme());
   return (
     <Pressable
-      style={[styles.row, divider && styles.divider]}
+      style={({ pressed }) => [styles.row, divider && styles.divider, pressed && styles.pressed]}
       onPress={() => onValueChange(!value)}
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
@@ -47,22 +55,41 @@ export function SwitchRow({ label, description, accessibilityLabel, accessibilit
       accessibilityHint={accessibilityHint}
     >
       <RowText label={label} description={description} />
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: theme.colors.switchTrackOff, true: theme.colors.switchTrackOn }}
-        ios_backgroundColor={theme.colors.switchTrackOff}
-        thumbColor={theme.colors.switchThumb}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-      />
+      <Toggle on={value} />
     </Pressable>
+  );
+}
+
+const TRACK_WIDTH = 52;
+const TRACK_HEIGHT = 32;
+const THUMB = 24;
+const BORDER = 2;
+const TRAVEL = TRACK_WIDTH - THUMB - (TRACK_HEIGHT - THUMB);
+
+// The frame's toggle: a filled track with an amber thumb when on, an
+// outlined track with a gray thumb when off. Drawn, since the native Switch
+// can't be outlined. Decorative: the row is the switch for screen readers.
+function Toggle({ on }: { on: boolean }) {
+  const styles = createStyles(useTheme());
+  const reduceMotion = useReducedMotion();
+  const position = useSharedValue(on ? 1 : 0);
+
+  useEffect(() => {
+    position.value = reduceMotion ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 150 });
+  }, [on, reduceMotion, position]);
+
+  const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: position.value * TRAVEL }] }));
+
+  return (
+    <View style={[styles.track, on ? styles.trackOn : styles.trackOff]} accessible={false} importantForAccessibility="no-hide-descendants">
+      <Animated.View style={[styles.thumb, on ? styles.thumbOn : styles.thumbOff, thumbStyle]} />
+    </View>
   );
 }
 
 type Option<T extends string> = { value: T; label: string; description?: string };
 
-// A card of radio options, one selected.
+// Rows of radio options, one selected.
 export function OptionGroup<T extends string>({
   options,
   selected,
@@ -75,11 +102,11 @@ export function OptionGroup<T extends string>({
   const theme = useTheme();
   const styles = createStyles(theme);
   return (
-    <GlassCard accessibilityRole="radiogroup">
+    <RowGroup accessibilityRole="radiogroup">
       {options.map((option, i) => (
         <Pressable
           key={option.value}
-          style={[styles.row, i > 0 && styles.divider]}
+          style={({ pressed }) => [styles.row, i > 0 && styles.divider, pressed && styles.pressed]}
           onPress={() => onSelect(option.value)}
           accessibilityRole="radio"
           accessibilityState={{ checked: option.value === selected }}
@@ -90,12 +117,13 @@ export function OptionGroup<T extends string>({
           {option.value === selected && <Checkmark color={theme.colors.accent} />}
         </Pressable>
       ))}
-    </GlassCard>
+    </RowGroup>
   );
 }
 
-// A segmented control: one choice from a few short options, side by side.
-// Screen readers hear each segment as a radio button, "System, selected".
+// A segmented control: one choice from a few short options, side by side,
+// as rounded white buttons like the frame's − and + buttons. Screen readers
+// hear each segment as a radio button, "System, selected".
 export function SegmentedControl<T extends string>({
   options,
   selected,
@@ -113,47 +141,59 @@ export function SegmentedControl<T extends string>({
   const theme = useTheme();
   const styles = createStyles(theme);
   return (
-    <GlassCard accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
-      <View style={styles.segments}>
-        {options.map((option) => {
-          const isSelected = option.value === selected;
-          return (
-            <Pressable
-              key={option.value}
-              style={[styles.segment, isSelected && styles.segmentSelected]}
-              onPress={() => onSelect(option.value)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: isSelected }}
-              accessibilityLabel={option.spoken ?? option.label}
-              accessibilityHint={accessibilityHint}
-            >
-              <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </GlassCard>
+    <View style={styles.segments} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      {options.map((option) => {
+        const isSelected = option.value === selected;
+        return (
+          <Pressable
+            key={option.value}
+            style={({ pressed }) => [styles.segment, isSelected && styles.segmentSelected, pressed && styles.pressed]}
+            onPress={() => onSelect(option.value)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: isSelected }}
+            accessibilityLabel={option.spoken ?? option.label}
+            accessibilityHint={accessibilityHint}
+          >
+            <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
-// A row that opens something, showing the current value on the right.
-// Screen readers hear "<label>, <value>, button".
-export function ValueRow({ label, value, onPress, divider }: { label: string; value: string; onPress: () => void; divider?: boolean }) {
+// A row that opens something, with the current value as its subtitle (like
+// the frame's "Location / New York, NY"). Screen readers hear
+// "<label>, <value>, button".
+export function ValueRow({
+  label,
+  value,
+  accessibilityHint,
+  onPress,
+  divider,
+}: {
+  label: string;
+  value: string;
+  accessibilityHint?: string;
+  onPress: () => void;
+  divider?: boolean;
+}) {
   const theme = useTheme();
   const styles = createStyles(theme);
   return (
     <Pressable
-      style={[styles.row, divider && styles.divider]}
+      style={({ pressed }) => [styles.row, divider && styles.divider, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${value}`}
+      accessibilityHint={accessibilityHint}
     >
-      <RowText label={label} />
-      <Text style={styles.value}>{value}</Text>
+      <RowText label={label} description={value} />
       <SymbolView
         name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-        size={16}
-        tintColor={theme.colors.textSecondary}
+        size={18}
+        weight="semibold"
+        tintColor={theme.colors.textPrimary}
         accessible={false}
       />
     </Pressable>
@@ -187,8 +227,8 @@ export function ActionRow({
       <RowText label={label} description={description} />
       <SymbolView
         name={{ ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }}
-        size={16}
-        tintColor={theme.colors.textSecondary}
+        size={18}
+        tintColor={theme.colors.textPrimary}
         accessible={false}
       />
     </Pressable>
@@ -210,71 +250,96 @@ function Checkmark({ color }: { color: string }) {
 }
 
 function createStyles(theme: Theme) {
+  const { colors } = theme;
   return StyleSheet.create({
     section: {
-      gap: spacing.sm,
+      gap: spacing.md,
     },
     sectionTitle: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: theme.colors.heading,
-      marginLeft: spacing.xs,
+      ...typography.h2,
+      color: colors.textPrimary,
+    },
+    group: {
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      minHeight: 56,
-      padding: spacing.md,
+      minHeight: 64,
+      paddingVertical: spacing.sm + 4,
     },
     pressed: {
       opacity: 0.6,
     },
     divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.border,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     text: {
       flex: 1,
-      gap: spacing.xs,
+      gap: 2,
     },
     label: {
-      fontSize: 17,
-      fontWeight: '600',
-      color: theme.colors.textPrimary,
+      ...typography.title,
+      color: colors.textPrimary,
     },
     description: {
-      fontSize: 14,
-      color: theme.colors.textSecondary,
+      ...typography.body,
+      color: colors.textSecondary,
+    },
+    track: {
+      width: TRACK_WIDTH,
+      height: TRACK_HEIGHT,
+      borderRadius: TRACK_HEIGHT / 2,
+      borderWidth: BORDER,
+      justifyContent: 'center',
+      paddingHorizontal: (TRACK_HEIGHT - THUMB) / 2 - BORDER,
+    },
+    trackOn: {
+      backgroundColor: colors.switchTrackOn,
+      borderColor: colors.switchTrackOn,
+    },
+    trackOff: {
+      backgroundColor: colors.switchTrackOff,
+      borderColor: colors.switchBorderOff,
+    },
+    thumb: {
+      width: THUMB,
+      height: THUMB,
+      borderRadius: THUMB / 2,
+    },
+    thumbOn: {
+      backgroundColor: colors.switchThumbOn,
+    },
+    thumbOff: {
+      backgroundColor: colors.switchThumbOff,
     },
     segments: {
       flexDirection: 'row',
-      gap: spacing.xs,
-      padding: spacing.xs,
+      gap: spacing.sm,
     },
     segment: {
+      ...cardShadow(theme),
       flex: 1,
-      minHeight: 44,
+      minHeight: 56,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: radius.md - spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.button,
     },
     segmentSelected: {
-      backgroundColor: theme.colors.buttonBackground,
+      backgroundColor: colors.buttonBackground,
+      borderColor: colors.buttonBackground,
     },
     segmentText: {
-      fontSize: 17,
-      fontWeight: '600',
-      color: theme.colors.textPrimary,
+      ...typography.title,
+      color: colors.textPrimary,
     },
     segmentTextSelected: {
-      color: theme.colors.buttonText,
-    },
-    value: {
-      fontSize: 17,
-      color: theme.colors.textSecondary,
-      flexShrink: 1,
-      textAlign: 'right',
+      color: colors.buttonText,
     },
   });
 }

@@ -31,7 +31,7 @@ export function useGlassBackdrop() {
 }
 
 type Props = {
-  // Tints the blobs. Without it there are no blobs (e.g. on Settings).
+  // Tints the blobs. Without it there are no blobs (e.g. on Preferences).
   condition?: ConditionId;
   // How far blobs may spread past the cards: sideways to the screen edges,
   // and up only under something opaque (never under page text).

@@ -9,7 +9,7 @@ import { usePreferences } from './use-preferences';
 
 // Vibrates the pattern for the given conditions once when the weather first
 // loads and again whenever the conditions change, if "Vibration" is on in
-// Settings. Pass an empty list while loading. During a severe alert
+// Preferences. Pass an empty list while loading. During a severe alert
 // (`alertActive`), the alert vibrates with its beeps instead. Returns
 // `replay` (for tapping the weather icon) and `playPattern`.
 export function useConditionHaptics(conditions: ConditionId[], alertActive: boolean) {

@@ -6,7 +6,7 @@ import type { TemperatureUnit } from '@/services/preferences';
 import { usePreferences } from './use-preferences';
 
 // Weather data is always in °F; this converts for display in the unit
-// chosen in Settings. On Auto (the default), that's the usual unit in the
+// chosen in Preferences. On Auto (the default), that's the usual unit in the
 // country of your last live location, or your phone region's before the
 // first one. `value(72)` -> 72 or 22.
 export function useTemperature() {

@@ -7,7 +7,7 @@ import { sortByPriority } from '@/constants/condition-priority';
 import { conditionProfiles } from '@/constants/condition-profiles';
 import type { ConditionId } from '@/constants/conditions';
 import { getTestWeatherOption } from '@/constants/test-weather';
-import { spacing, type Theme } from '@/constants/theme';
+import { type Theme } from '@/constants/theme';
 import { formatClockTime } from '@/features/preferences/opening-time';
 import { TimePickerSheet } from '@/features/preferences/time-picker-sheet';
 import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
@@ -19,8 +19,7 @@ import { alertSound } from '@/services/alert-sound';
 import { conditionPatterns, hapticPlayer } from '@/services/haptics';
 import type { DevWeatherSource } from '@/services/preferences';
 
-import { GlassCard } from './glass-card';
-import { ActionRow, OptionGroup, SettingsSection, SwitchRow, ValueRow } from './settings-rows';
+import { ActionRow, OptionGroup, RowGroup, SettingsSection, SwitchRow, ValueRow } from './settings-rows';
 
 const SOURCE_OPTIONS: { value: DevWeatherSource; label: string; description: string }[] = [
   { value: 'test', label: 'Test weather', description: 'Filler data, no internet needed' },
@@ -28,8 +27,9 @@ const SOURCE_OPTIONS: { value: DevWeatherSource; label: string; description: str
   { value: 'nws', label: 'NWS only', description: 'Live, with no fallback' },
 ];
 
-// Settings for testing and presenting: forces test weather, cycles through
-// it, or tests one live provider on its own.
+// The Developer section of the Preferences tab, for testing and presenting:
+// forces test weather, cycles through it, or tests one live provider on its
+// own.
 export function DeveloperSettings() {
   const styles = createStyles(useTheme());
   const { preferences, updatePreferences } = usePreferences();
@@ -45,7 +45,7 @@ export function DeveloperSettings() {
   return (
     <>
       <SettingsSection title="Developer">
-        <GlassCard>
+        <RowGroup>
           <SwitchRow
             label="Developer mode"
             accessibilityHint="Shows test weather instead of live weather, for testing and presenting"
@@ -93,7 +93,7 @@ export function DeveloperSettings() {
               divider
             />
           )}
-        </GlassCard>
+        </RowGroup>
       </SettingsSection>
 
       <TimePickerSheet
@@ -153,7 +153,6 @@ function createStyles(theme: Theme) {
     info: {
       fontSize: 14,
       color: theme.colors.textSecondary,
-      marginLeft: spacing.xs,
       fontVariant: ['tabular-nums'],
     },
   });

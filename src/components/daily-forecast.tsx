@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { describeConditions } from '@/constants/condition-profiles';
-import { spacing, type Theme } from '@/constants/theme';
+import { spacing, typography, type Theme } from '@/constants/theme';
 import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
 import { localDateString } from '@/services/time';
@@ -13,8 +13,8 @@ import { WeatherIcon } from './weather-icon';
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// Today and the next two days: icon, high, and low. Same glass panel as the
-// hourly forecast, heading inside.
+// Today and the next two days: icon, high, and low. A headline above a flat
+// card with divided rows, like design/frames/07_Weather_scrolled.png.
 export function DailyForecast({ days }: { days: Day[] }) {
   const styles = createStyles(useTheme());
   const temperature = useTemperature();
@@ -22,29 +22,31 @@ export function DailyForecast({ days }: { days: Day[] }) {
   const today = localDateString();
 
   return (
-    <GlassCard style={styles.panel}>
+    <View style={styles.section}>
       <Text style={styles.heading} accessibilityRole="header">
         {days.length}-day forecast
       </Text>
-      {days.map((day, i) => {
-        const { short, full } = dayNames(day.date, today);
-        return (
-          <View
-            key={day.date}
-            style={[styles.row, i > 0 && styles.divider]}
-            accessible
-            accessibilityLabel={`${full}, ${describeConditions(day.conditions)}, high ${temperature.value(day.high)} degrees, low ${temperature.value(day.low)} degrees`}
-          >
-            <Text style={styles.day}>{short}</Text>
-            <WeatherIcon conditions={day.conditions} size={40} />
-            <View style={styles.temperatures}>
-              <Text style={styles.high}>H {temperature.value(day.high)}°</Text>
-              <Text style={styles.low}>L {temperature.value(day.low)}°</Text>
+      <GlassCard style={styles.panel}>
+        {days.map((day, i) => {
+          const { short, full } = dayNames(day.date, today);
+          return (
+            <View
+              key={day.date}
+              style={[styles.row, i > 0 && styles.divider]}
+              accessible
+              accessibilityLabel={`${full}, ${describeConditions(day.conditions)}, high ${temperature.value(day.high)} degrees, low ${temperature.value(day.low)} degrees`}
+            >
+              <Text style={styles.day}>{short}</Text>
+              <WeatherIcon conditions={day.conditions} size={40} />
+              <View style={styles.temperatures}>
+                <Text style={styles.high}>H {temperature.value(day.high)}°</Text>
+                <Text style={styles.low}>L {temperature.value(day.low)}°</Text>
+              </View>
             </View>
-          </View>
-        );
-      })}
-    </GlassCard>
+          );
+        })}
+      </GlassCard>
+    </View>
   );
 }
 
@@ -58,21 +60,21 @@ function dayNames(date: string, today: string): { short: string; full: string } 
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
+    section: {
+      gap: spacing.md,
+    },
     panel: {
-      paddingVertical: spacing.md,
-      gap: spacing.xs,
+      paddingVertical: spacing.xs,
     },
     heading: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: theme.colors.heading,
-      paddingHorizontal: spacing.md,
+      ...typography.h2,
+      color: theme.colors.textPrimary,
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      minHeight: 56,
+      minHeight: 64,
       paddingHorizontal: spacing.md,
     },
     divider: {
@@ -80,9 +82,8 @@ function createStyles(theme: Theme) {
       borderTopColor: theme.colors.border,
     },
     day: {
-      width: 64,
-      fontSize: 17,
-      fontWeight: '600',
+      ...typography.title,
+      width: 72,
       color: theme.colors.textPrimary,
     },
     temperatures: {
@@ -92,13 +93,13 @@ function createStyles(theme: Theme) {
       gap: spacing.md,
     },
     high: {
-      fontSize: 17,
-      fontWeight: '700',
+      ...typography.title,
       color: theme.colors.textPrimary,
       fontVariant: ['tabular-nums'],
     },
     low: {
-      fontSize: 17,
+      ...typography.title,
+      fontWeight: '400',
       color: theme.colors.textSecondary,
       fontVariant: ['tabular-nums'],
     },

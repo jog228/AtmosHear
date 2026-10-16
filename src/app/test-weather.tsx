@@ -11,7 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 const GROUPS: TestWeather['group'][] = ['Conditions', 'Combinations'];
 
-// Sheet for picking Developer mode's test weather (opened from Settings).
+// Sheet for picking Developer mode's test weather (opened from Preferences › Developer).
 export default function TestWeatherSheet() {
   const theme = useTheme();
   const styles = createStyles(theme);

@@ -1,6 +1,6 @@
 import { StyleSheet, Text } from 'react-native';
 
-import { type Theme } from '@/constants/theme';
+import { LARGE_TEXT_MAX_SCALE, typography, type Theme } from '@/constants/theme';
 import { useMinuteClock } from '@/hooks/use-minute-clock';
 import { useTheme } from '@/hooks/use-theme';
 import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
@@ -19,8 +19,8 @@ type Props = {
 // "Good evening!", or "Good evening, Jolie!" with the name saved in
 // Preferences, following today's sunset. Checks each minute and on return
 // to the app; Developer "Simulate time" applies too. Not announced when it
-// changes: VoiceOver reads it in order after the location, as one line.
-// Shown inside the screen header, which keeps it clear of the buttons.
+// changes: VoiceOver reads it in order after the location and buttons, as
+// one line. It's the screen's headline (and its VoiceOver header).
 export function Greeting({ weather, place, visible }: Props) {
   const styles = createStyles(useTheme());
   const clock = useMinuteClock(visible);
@@ -39,7 +39,13 @@ export function Greeting({ weather, place, visible }: Props) {
     // at 1.3×). No auto-shrink: on iOS it shrank the text far too much. In
     // the rare case a line is too wide (a long name at the largest sizes),
     // it wraps instead.
-    <Text style={styles.greeting} accessibilityLabel={greeting} allowFontScaling maxFontSizeMultiplier={1.3}>
+    <Text
+      style={styles.greeting}
+      accessibilityRole="header"
+      accessibilityLabel={greeting}
+      allowFontScaling
+      maxFontSizeMultiplier={LARGE_TEXT_MAX_SCALE}
+    >
       {display}
     </Text>
   );
@@ -47,16 +53,11 @@ export function Greeting({ weather, place, visible }: Props) {
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    // A headline, a step lighter than the condition name so that still reads
-    // as the icon's label. The temperature (88) stays the largest text.
+    // A big bold left-aligned headline. The temperature (display) stays the
+    // largest text.
     greeting: {
-      fontSize: 30,
-      fontWeight: '500',
+      ...typography.h2,
       color: theme.colors.textPrimary,
-      textAlign: 'center',
-      // The font's natural spacing (1.2×): tight, so the two lines read as
-      // one unit, without clipping letters like "g".
-      lineHeight: 36,
     },
   });
 }

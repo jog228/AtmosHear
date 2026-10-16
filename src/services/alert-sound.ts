@@ -9,13 +9,15 @@ import { hapticPlayer } from './haptics';
 // Plays the severe weather alert: the alert sound a few times back to back
 // at full volume, with the ambient sounds ducked underneath, and the alert
 // vibration with each beep. Separate from the ambient loops, and plays even
-// when "Ambient sound" or "Vibration" is off in Settings.
+// when "Ambient sound" or "Vibration" is off in Preferences.
 class AlertSound {
   private player: AudioPlayer | null = null;
   // Beeps still to play after the current one.
   private remaining = 0;
   private beeping = false;
   private onFinished?: () => void;
+  // False for a preview with Vibration off (real alerts always vibrate).
+  private vibrate = true;
   // Alerts that have already beeped this session.
   private played = new Set<string>();
 
@@ -33,8 +35,9 @@ class AlertSound {
   }
 
   // Plays all the beeps now (restarting if they're already playing), then
-  // calls onFinished.
-  play(onFinished?: () => void) {
+  // calls onFinished. `vibrate: false` is only for previews.
+  play(onFinished?: () => void, { vibrate = true } = {}) {
+    this.vibrate = vibrate;
     this.remaining = ALERT_REPEATS - 1;
     this.onFinished = onFinished;
     ambientSound.setDucked(true);
@@ -59,7 +62,7 @@ class AlertSound {
     player.volume = 1;
     player.seekTo(0);
     player.play();
-    hapticPlayer.play([conditionProfiles['severe-alert'].haptic], { alert: true });
+    if (this.vibrate) hapticPlayer.play([conditionProfiles['severe-alert'].haptic], { alert: true });
   }
 
   private handleFinished() {

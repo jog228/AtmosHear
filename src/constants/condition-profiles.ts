@@ -1,19 +1,37 @@
 import type { AudioSource } from 'expo-audio';
-import type { ImageProps } from 'expo-image';
 
+import {
+  ClearIcon,
+  ExtremeColdIcon,
+  ExtremeHeatIcon,
+  FogIcon,
+  HeavyRainIcon,
+  LightRainIcon,
+  OvercastIcon,
+  PartlyCloudyIcon,
+  SevereAlertIcon,
+  SleetIcon,
+  SnowIcon,
+  ThunderstormIcon,
+  WindIcon,
+  type DotIconComponent,
+} from '../components/icons';
 import { sortByPriority } from './condition-priority';
+import { contrastRatio, type ContrastPair } from './contrast';
 import type { ConditionId } from './conditions';
 import { taps, tapsEvery, type HapticPattern } from './haptics';
-import { darkPalette, palette } from './theme';
+import { breathe, hold, maxFlashesPerSecond, MAX_FLASHES_PER_SECOND, type LightCue } from './light-cues';
+import { cueColors, darkPalette, palette } from './theme';
 
 export type ConditionProfile = {
   label: string;
   // Accent color for this condition (e.g. the detail card icons), for the
   // light and dark themes. Dark colors must reach 3:1 on the navy background.
   color: { light: string; dark: string };
-  // 1024x1024 PNG from assets/icons/weather-icons. Must be a static
-  // require() so Expo bundles the file.
-  icon: ImageProps['source'];
+  // Dotted SVG icon from src/components/icons, drawn in one color. (The
+  // old PNGs in assets/icons/weather-icons are unused, kept until the team
+  // confirms the switch.)
+  icon: DotIconComponent;
   // Looping ambient sound from assets/sounds, or null for silence. Must be a
   // static require() so Expo bundles the file.
   sound: AudioSource | null;
@@ -30,17 +48,36 @@ export type ConditionProfile = {
   // Vibration: timed taps (src/constants/haptics.ts). Patterns differ
   // mainly by rhythm. Played once, never looped.
   haptic: HapticPattern;
-  // Filled in a later step: light animation.
+  // Cue screen copy (Sound library, Feel & hear, condition detail). These
+  // must describe what actually plays: update them with the sound file or
+  // the haptic pattern.
+  soundDescription: string;
+  // e.g. "Rumble, then two sharp cracks" and "13 quick heavy taps, 2 sharp".
+  vibrationDescription: string;
+  vibrationDetail: string;
+  // Full-screen light cue (src/constants/light-cues.ts), never more than 3
+  // flashes per second.
+  light: LightCue;
+  lightDescription: string;
+  // Text and background colors shown on the cue screens. The ratio is
+  // computed from the colors (src/constants/contrast.ts), never typed in.
+  contrastPair: ContrastPair;
 };
 
 // The single place that defines how each condition looks, sounds, and
 // feels. To change a condition's color, swap the palette names below.
-// To change its icon, replace the PNG (same file name) or the require().
+// To change its icon, edit it in src/components/icons/condition-icons.tsx.
 export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'clear': {
     label: 'Clear',
     color: { light: palette.sun, dark: darkPalette.yellow },
-    icon: require('../../assets/icons/weather-icons/01-clear.png'),
+    icon: ClearIcon,
+    soundDescription: 'Soft, low, warm hum',
+    vibrationDescription: 'Slow, steady taps',
+    vibrationDetail: '4 soft taps',
+    light: breathe('amber', { peak: 0.5 }),
+    lightDescription: 'Bright amber, slow breathe',
+    contrastPair: { fg: 'amber', bg: 'navy' },
     // Slow, steady.
     haptic: taps('soft', [0, 600, 1200, 1800]),
     sound: require('../../assets/sounds/clear.m4a'),
@@ -48,7 +85,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'partly-cloudy': {
     label: 'Partly cloudy',
     color: { light: palette.sun, dark: darkPalette.yellow },
-    icon: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
+    icon: PartlyCloudyIcon,
+    soundDescription: 'Sound coming soon',
+    vibrationDescription: 'Tap-tap pairs',
+    vibrationDetail: '3 pairs: medium, then light',
+    light: breathe('amber', { peak: 0.35 }),
+    lightDescription: 'Amber, slow breathe',
+    contrastPair: { fg: 'amber', bg: 'navy' },
     // Medium + light pairs.
     haptic: [
       ...taps('medium', [0, 700, 1400]),
@@ -60,7 +103,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'overcast': {
     label: 'Overcast',
     color: { light: palette.gray, dark: darkPalette.gray },
-    icon: require('../../assets/icons/weather-icons/03-overcast.png'),
+    icon: OvercastIcon,
+    soundDescription: 'Low, muted hum',
+    vibrationDescription: 'Very slow, faint taps',
+    vibrationDetail: '3 soft taps, 1 s apart',
+    light: breathe('slate', { periodMs: 6000, peak: 0.35, times: 1 }),
+    lightDescription: 'Gray, very slow fade',
+    contrastPair: { fg: 'white', bg: 'slate' },
     // Very slow and faint.
     haptic: taps('soft', [0, 1000, 2000]),
     // A low, muted hum, intentionally softer (-29.1 LUFS vs clear's -27.3).
@@ -73,7 +122,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'light-rain': {
     label: 'Light rain',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/04-light-rain.png'),
+    icon: LightRainIcon,
+    soundDescription: 'Quiet, soft rain',
+    vibrationDescription: 'Quick, uneven patter',
+    vibrationDetail: '10 light taps',
+    light: breathe('periwinkle', { periodMs: 1000, peak: 0.25, times: 6 }),
+    lightDescription: 'Periwinkle, gentle pulses',
+    contrastPair: { fg: 'navy', bg: 'iceBlue' },
     // Quick and slightly uneven, like drops.
     haptic: taps('light', [0, 110, 260, 350, 500, 620, 760, 850, 1000, 1130]),
     // Intentionally a step softer than heavy rain (-33.5 LUFS vs heavy
@@ -83,7 +138,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'heavy-rain': {
     label: 'Heavy rain',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
+    icon: HeavyRainIcon,
+    soundDescription: 'Steady, dense rain',
+    vibrationDescription: 'Rapid, strong drumming',
+    vibrationDetail: '20 heavy taps in 1.4 s',
+    light: breathe('navy', { periodMs: 500, peak: 0.35, times: 8 }),
+    lightDescription: 'Navy, quick pulses',
+    contrastPair: { fg: 'white', bg: 'navy' },
     // Rapid and strong.
     haptic: tapsEvery('heavy', 70, 0, 1400),
     sound: require('../../assets/sounds/heavy-rain.m4a'),
@@ -94,7 +155,20 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'thunderstorm': {
     label: 'Thunderstorm',
     color: { light: palette.ink, dark: darkPalette.yellow },
-    icon: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
+    icon: ThunderstormIcon,
+    soundDescription: 'Deep, rolling thunder',
+    vibrationDescription: 'Rumble, then two sharp cracks',
+    vibrationDetail: '13 quick heavy taps, 2 sharp',
+    // A white flash, then the screen goes dark.
+    light: [
+      { color: 'white', opacity: 0.85, ms: 60 },
+      { color: 'white', opacity: 0, ms: 240 },
+      { color: 'ink', opacity: 0.7, ms: 200 },
+      hold('ink', 0.7, 1200),
+      { color: 'ink', opacity: 0, ms: 900 },
+    ],
+    lightDescription: 'White flash, then dark',
+    contrastPair: { fg: 'white', bg: 'ink' },
     // A rumble, then two sharp cracks.
     haptic: [...tapsEvery('heavy', 40, 0, 500), ...taps('rigid', [1200, 2000])],
     // Intentionally louder to feel intense (-21.2 LUFS vs clear's -27.3).
@@ -104,7 +178,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'snow': {
     label: 'Snow',
     color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
-    icon: require('../../assets/icons/weather-icons/07-snow.png'),
+    icon: SnowIcon,
+    soundDescription: 'Hushed, soft texture',
+    vibrationDescription: 'Slow ripples in threes',
+    vibrationDetail: '2 groups of 3 soft taps',
+    light: breathe('iceBlue', { periodMs: 3000, peak: 0.4 }),
+    lightDescription: 'Ice blue, soft glow',
+    contrastPair: { fg: 'navy', bg: 'white' },
     // A slow ripple in groups of three.
     haptic: taps('soft', [0, 250, 500, 1100, 1350, 1600]),
     // Intentionally a bit softer to feel hushed (-28.3 LUFS vs clear's
@@ -114,7 +194,19 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'sleet': {
     label: 'Sleet',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/08-sleet.png'),
+    icon: SleetIcon,
+    soundDescription: 'Hissing, icy rain',
+    vibrationDescription: 'Irregular, sharp taps',
+    vibrationDetail: '7 sharp taps',
+    // Uneven pulses, the fastest 2.5 per second.
+    light: [
+      ...breathe('periwinkle', { periodMs: 400, peak: 0.3, times: 1 }),
+      ...breathe('periwinkle', { periodMs: 700, peak: 0.3, times: 1 }),
+      ...breathe('periwinkle', { periodMs: 500, peak: 0.3, times: 1 }),
+      ...breathe('periwinkle', { periodMs: 900, peak: 0.3, times: 1 }),
+    ],
+    lightDescription: 'Periwinkle, uneven flicker',
+    contrastPair: { fg: 'ink', bg: 'iceBlue' },
     // Irregular and sharp.
     haptic: taps('rigid', [0, 90, 340, 400, 720, 1010, 1080]),
     sound: require('../../assets/sounds/sleet.m4a'),
@@ -125,7 +217,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'fog': {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
-    icon: require('../../assets/icons/weather-icons/09-fog.png'),
+    icon: FogIcon,
+    soundDescription: 'Low, airy drone',
+    vibrationDescription: 'Slowing, soft taps',
+    vibrationDetail: '4 soft taps, further apart',
+    light: breathe('white', { periodMs: 6000, peak: 0.5, times: 1 }),
+    lightDescription: 'White haze, slow fade',
+    contrastPair: { fg: 'ink', bg: 'mist' },
     // A slowing wave.
     haptic: taps('soft', [0, 800, 1700, 2700]),
     // A low, airy drone, meant to sit soft. Measures -27.3 LUFS (same as
@@ -135,7 +233,19 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'wind': {
     label: 'Windy',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/10-wind.png'),
+    icon: WindIcon,
+    soundDescription: 'Low, gusty wind',
+    vibrationDescription: 'Swells and fades',
+    vibrationDetail: '8 taps, light to heavy and back',
+    light: [
+      { color: 'periwinkle', opacity: 0.2, ms: 600 },
+      { color: 'periwinkle', opacity: 0.45, ms: 600 },
+      { color: 'periwinkle', opacity: 0.1, ms: 500 },
+      { color: 'periwinkle', opacity: 0.4, ms: 700 },
+      { color: 'periwinkle', opacity: 0, ms: 900 },
+    ],
+    lightDescription: 'Periwinkle, swells and fades',
+    contrastPair: { fg: 'navy', bg: 'mist' },
     // Swells and fades.
     haptic: [
       ...taps('light', [0, 100, 600, 700]),
@@ -155,7 +265,13 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Extreme heat',
     // TODO: awaiting final color from design team.
     color: { light: palette.sun, dark: darkPalette.yellow },
-    icon: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
+    icon: ExtremeHeatIcon,
+    soundDescription: 'Sound coming soon',
+    vibrationDescription: 'Steady, warm buzz',
+    vibrationDetail: '1.5 s of soft taps',
+    light: breathe('amber', { periodMs: 3000, peak: 0.6 }),
+    lightDescription: 'Deep amber, warm glow',
+    contrastPair: { fg: 'ink', bg: 'amber' },
     // Steady and warm.
     haptic: tapsEvery('soft', 50, 0, 1500),
     // TODO: awaiting sound from teammate.
@@ -165,7 +281,14 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Extreme cold',
     // TODO: awaiting final color from design team.
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
+    icon: ExtremeColdIcon,
+    soundDescription: 'Sharp ice cracks, once a second',
+    vibrationDescription: 'Shivering triplets',
+    vibrationDetail: '3 quick triplets, 1 s apart',
+    // In time with the ice cracks.
+    light: breathe('iceBlue', { periodMs: 1000, peak: 0.35, times: 4 }),
+    lightDescription: 'Ice blue, pulse each second',
+    contrastPair: { fg: 'iceBlue', bg: 'navy' },
     // Shivering triplets, in time with the ice-crack sound.
     haptic: taps('light', [0, 60, 120, 1000, 1060, 1120, 2000, 2060, 2120]),
     // A sharp ice crack once per second, so the 4-second loop must stay
@@ -176,7 +299,18 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Severe weather alert',
     // TODO: awaiting final color from design team.
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
-    icon: require('../../assets/icons/weather-icons/13-severe-alert.png'),
+    icon: SevereAlertIcon,
+    soundDescription: 'Repeating alert tone',
+    vibrationDescription: 'Heavy triple pulses',
+    vibrationDetail: '3 heavy triplets',
+    // One amber flash per beep (each beep is about 2 s).
+    light: [0, 1, 2].flatMap((): LightCue => [
+      { color: 'amber', opacity: 0.8, ms: 150 },
+      { color: 'amber', opacity: 0, ms: 600 },
+      hold('amber', 0, 1290),
+    ]),
+    lightDescription: 'Amber flash with each beep',
+    contrastPair: { fg: 'ink', bg: 'amber' },
     // Heavy triplets, played with each alert beep (src/services/alert-sound.ts)
     // even when Vibration is off.
     haptic: taps('heavy', [0, 100, 200, 500, 600, 700, 1000, 1100, 1200]),
@@ -194,4 +328,16 @@ export function describeConditions(ids: ConditionId[]): string {
   );
   if (labels.length <= 1) return labels.join('');
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+}
+
+// Development checks: every light cue is flash-safe, and every contrast
+// pair passes WCAG AA for text.
+if (__DEV__) {
+  for (const [id, profile] of Object.entries(conditionProfiles)) {
+    if (maxFlashesPerSecond(profile.light) > MAX_FLASHES_PER_SECOND) {
+      console.error(`${id}: light cue flashes more than ${MAX_FLASHES_PER_SECOND} times per second`);
+    }
+    const { fg, bg } = profile.contrastPair;
+    if (contrastRatio(cueColors[fg], cueColors[bg]) < 4.5) console.error(`${id}: contrast pair is under 4.5:1`);
+  }
 }

@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { LightOverlay } from '@/components/light-overlay';
 import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
 import { PreferencesProvider, usePreferences } from '@/hooks/use-preferences';
 import type { Theme } from '@/constants/theme';
@@ -26,6 +27,8 @@ export default function RootLayout() {
         <OpeningPreferences>
           <ThemeProvider>
             <ThemedStack />
+            {/* Above every screen; never takes taps or VoiceOver focus. */}
+            <LightOverlay />
           </ThemeProvider>
         </OpeningPreferences>
       </PreferencesProvider>
@@ -60,11 +63,13 @@ function ThemedStack() {
       >
         {/* Picks the starting tab on launch, then gets out of the way. */}
         <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
-        {/* Weather, Alarms, and Preferences tabs; Settings opens above them. */}
+        {/* Weather, Alarms, and Preferences tabs. */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
-        {/* Settings only opens from the Weather tab, so the back button says
-            "Weather" (not the "(tabs)" group name). */}
-        <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Weather' }} />
+        {/* Cue screens: the native back button only (chevron), since each
+            screen has its own big headline. */}
+        <Stack.Screen name="feel-and-hear" options={{ title: 'Feel and hear', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
+        <Stack.Screen name="sounds" options={{ title: 'Sounds', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
+        <Stack.Screen name="condition/[id]" options={{ title: 'Condition', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         <Stack.Screen
           name="test-weather"
           options={{

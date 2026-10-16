@@ -1,16 +1,16 @@
 import { useCalendars } from 'expo-localization';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { mostSignificant } from '@/constants/condition-priority';
-import { spacing, type Theme } from '@/constants/theme';
+import { spacing, typography, type Theme } from '@/constants/theme';
 import { useMinuteClock } from '@/hooks/use-minute-clock';
-import { useConditionColor, useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { Place } from '@/services/location';
 import { formatDuration, formatTimeOfDay, resolveSunTimes, sunPhase } from '@/services/sun-times';
 import type { WeatherData } from '@/services/weather-data';
 
 import { GlassCard } from './glass-card';
+import { SunriseIcon, SunsetIcon, type DotIconComponent } from './icons';
+import { SunArc } from './sun-arc';
 
 type Props = {
   weather: WeatherData;
@@ -21,11 +21,10 @@ type Props = {
 };
 
 // Sunrise and sunset, with how much daylight is left (or, at night, how
-// long until sunrise).
+// long until sunrise), and a dotted arc showing where the sun is now.
 export function SunCard({ weather, place, visible }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
-  const accent = useConditionColor(mostSignificant(weather.current.conditions));
   const uses24Hour = useCalendars()[0]?.uses24hourClock ?? false;
   const now = useMinuteClock(visible);
 
@@ -45,6 +44,7 @@ export function SunCard({ weather, place, visible }: Props) {
   const sunset = formatTimeOfDay(times.sunset, uses24Hour);
   const duration = formatDuration(phase.kind === 'day' ? phase.daylightLeftMs : phase.untilSunriseMs);
   const status = phase.kind === 'day' ? `${duration.short} of daylight left` : `Sunrise in ${duration.short}`;
+  const progress = phase.kind === 'day' ? (now - times.sunrise) / (times.sunset - times.sunrise) : null;
   const spokenStatus =
     phase.kind === 'day' ? `${duration.spoken} of daylight left` : `sunrise in ${duration.spoken}`;
 
@@ -55,9 +55,11 @@ export function SunCard({ weather, place, visible }: Props) {
       accessibilityLabel={`Sunrise ${sunrise}, sunset ${sunset}, ${spokenStatus}`}
     >
       <View style={styles.times}>
-        <SunTime label="Sunrise" time={sunrise} icon={{ ios: 'sunrise.fill', android: 'wb_twilight', web: 'wb_twilight' }} color={accent} theme={theme} />
-        <SunTime label="Sunset" time={sunset} icon={{ ios: 'sunset.fill', android: 'wb_twilight', web: 'wb_twilight' }} color={accent} theme={theme} alignRight />
+        <SunTime label="Sunrise" time={sunrise} icon={SunriseIcon} color={theme.colors.accent} theme={theme} />
+        <SunTime label="Sunset" time={sunset} icon={SunsetIcon} color={theme.colors.accent} theme={theme} alignRight />
       </View>
+
+      <SunArc progress={progress} />
 
       <Text style={styles.status}>{status}</Text>
     </GlassCard>
@@ -67,26 +69,26 @@ export function SunCard({ weather, place, visible }: Props) {
 function SunTime({
   label,
   time,
-  icon,
+  icon: Icon,
   color,
   theme,
   alignRight,
 }: {
   label: string;
   time: string;
-  icon: SymbolViewProps['name'];
+  icon: DotIconComponent;
   color: string;
   theme: Theme;
   alignRight?: boolean;
 }) {
   const styles = createStyles(theme);
   return (
-    <View style={[styles.time, alignRight && styles.timeRight]}>
-      <SymbolView name={icon} size={20} tintColor={color} accessible={false} />
-      <View style={alignRight && styles.textRight}>
+    <View style={[styles.time, alignRight && styles.textRight]}>
+      <View style={[styles.labelRow, alignRight && styles.labelRowRight]}>
+        <Icon size={22} color={color} />
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{time}</Text>
       </View>
+      <Text style={styles.value}>{time}</Text>
     </View>
   );
 }
@@ -94,35 +96,42 @@ function SunTime({
 function createStyles(theme: Theme) {
   return StyleSheet.create({
     card: {
-      padding: spacing.md,
-      gap: spacing.sm,
+      padding: spacing.md + spacing.xs,
+      gap: spacing.md,
     },
     times: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       gap: spacing.md,
     },
+    // A small label over a big bold time, like the frames.
     time: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
-    },
-    timeRight: {
-      flexDirection: 'row-reverse',
+      gap: 2,
     },
     textRight: {
       alignItems: 'flex-end',
     },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    labelRowRight: {
+      flexDirection: 'row-reverse',
+    },
     label: {
-      fontSize: 13,
+      ...typography.body,
+      fontSize: 15,
       color: theme.colors.textSecondary,
     },
     value: {
-      fontSize: 17,
-      fontWeight: '700',
+      ...typography.title,
+      fontSize: 24,
+      lineHeight: 30,
       color: theme.colors.textPrimary,
     },
     status: {
+      ...typography.body,
       fontSize: 15,
       color: theme.colors.textSecondary,
       textAlign: 'center',

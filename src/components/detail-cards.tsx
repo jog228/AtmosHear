@@ -1,28 +1,36 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 
 import { getAqiLevel } from '@/constants/air-quality';
-import { mostSignificant } from '@/constants/condition-priority';
-import { spacing, type Theme } from '@/constants/theme';
+import { spacing, typography, type Theme } from '@/constants/theme';
 import { useTemperature } from '@/hooks/use-temperature';
-import { useConditionColor, useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { AirQuality, CurrentWeather } from '@/services/weather-data';
 
 import { GlassCard } from './glass-card';
+import {
+  AirQualityIcon,
+  ClearIcon,
+  FeelsLikeIcon,
+  HumidityIcon,
+  LightRainIcon,
+  SnowIcon,
+  WindIcon,
+  type DotIconComponent,
+} from './icons';
 
 type Detail = {
   label: string;
   value: string;
   // The whole card, as VoiceOver reads it.
   spoken: string;
-  icon: SymbolViewProps['name'];
+  icon: DotIconComponent;
 };
 
-// Four cards fit on screen, plus this share of the next one peeking in at
-// the right edge so it's clear the row scrolls.
-const VISIBLE_CARDS = 4;
-const PEEK = 0.18;
+// Three cards fit on screen, plus this share of the next one peeking in at
+// the right edge so it's clear the row scrolls, like the frames.
+const VISIBLE_CARDS = 3;
+const PEEK = 0.45;
 const GAP = spacing.sm;
 // The row reaches the screen edges (the page has spacing.md padding), so
 // cards scroll all the way across and their shadows aren't cut off.
@@ -32,8 +40,8 @@ const SHADOW_TOP = spacing.md;
 const SHADOW_BOTTOM = spacing.lg;
 
 export function DetailCards({ current, airQuality }: { current: CurrentWeather; airQuality: AirQuality | null }) {
-  const styles = createStyles(useTheme());
-  const accent = useConditionColor(mostSignificant(current.conditions));
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
   // Card width from the row's width (the screen width until measured).
   const { width: windowWidth } = useWindowDimensions();
@@ -63,7 +71,8 @@ export function DetailCards({ current, airQuality }: { current: CurrentWeather; 
           // says what the row is as VoiceOver enters it.
           accessibilityLabel={i === 0 ? `Weather details, ${details.length} items. ${detail.spoken}` : detail.spoken}
         >
-          <SymbolView name={detail.icon} size={22} tintColor={accent} accessible={false} />
+          {/* Accent color, like the frames: 3:1 or more on cards in every theme. */}
+          <detail.icon size={26} color={theme.colors.accent} />
           <Text style={styles.value}>{detail.value}</Text>
           <Text style={styles.label}>{detail.label}</Text>
         </GlassCard>
@@ -82,32 +91,32 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
       label: 'Wind',
       value: `${current.windSpeed} mph`,
       spoken: `Wind, ${current.windSpeed} miles per hour`,
-      icon: { ios: 'wind', android: 'air', web: 'air' },
+      icon: WindIcon,
     },
     {
       label: 'Humidity',
       value: `${current.humidity}%`,
       spoken: `Humidity, ${current.humidity} percent`,
-      icon: { ios: 'humidity.fill', android: 'humidity_percentage', web: 'humidity_percentage' },
+      icon: HumidityIcon,
     },
     {
       label: 'Rain',
       value: `${current.rainChance}%`,
       spoken: `Rain, ${current.rainChance} percent chance`,
-      icon: { ios: 'umbrella.fill', android: 'umbrella', web: 'umbrella' },
+      icon: LightRainIcon,
     },
     {
       label: 'Feels like',
       value: `${feelsLike}°`,
       spoken: `Feels like, ${feelsLike} degrees`,
-      icon: { ios: 'thermometer.medium', android: 'thermometer', web: 'thermometer' },
+      icon: FeelsLikeIcon,
     },
     {
       // "7" with "UV · High". NWS has no UV: a dash, never a made-up value.
       label: uvLevel ? `UV · ${uvLevel}` : 'UV',
       value: uvIndex === null ? '–' : String(uvIndex),
       spoken: uvIndex === null ? 'UV index unavailable' : `UV index ${uvIndex}, ${uvLevel?.toLowerCase()}`,
-      icon: { ios: 'sun.max.fill', android: 'wb_sunny', web: 'wb_sunny' },
+      icon: ClearIcon,
     },
     {
       // 2.5" (one decimal), or 0" when none. NWS has no snowfall amounts.
@@ -117,7 +126,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
         snowToday === null
           ? 'Snowfall unavailable'
           : `Snow today, ${formatInches(snowToday)} ${snowToday === 1 ? 'inch' : 'inches'}`,
-      icon: { ios: 'snowflake', android: 'ac_unit', web: 'ac_unit' },
+      icon: SnowIcon,
     },
     {
       // "42" with "Air · Good". Text stays the usual colors, not color-coded
@@ -127,7 +136,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
       spoken: airQuality && aqiLevel
         ? `Air quality index ${airQuality.aqi}, ${aqiLevel.name.toLowerCase()}`
         : 'Air quality unavailable',
-      icon: { ios: 'leaf.fill', android: 'eco', web: 'eco' },
+      icon: AirQualityIcon,
     },
   ];
 }
@@ -159,21 +168,22 @@ function createStyles(theme: Theme) {
       paddingTop: SHADOW_TOP,
       paddingBottom: SHADOW_BOTTOM,
     },
+    // Icon, value, and label stacked on the left, like the frames.
     card: {
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: spacing.xs,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xs,
+      padding: spacing.md,
     },
     value: {
-      fontSize: 17,
-      fontWeight: '700',
+      ...typography.title,
+      fontSize: 24,
+      lineHeight: 30,
+      marginTop: spacing.xs,
       color: theme.colors.textPrimary,
     },
     label: {
-      fontSize: 13,
+      ...typography.caption,
       color: theme.colors.textSecondary,
-      textAlign: 'center',
     },
   });
 }

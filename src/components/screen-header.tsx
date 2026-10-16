@@ -1,24 +1,30 @@
-import { Link } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { radius, spacing, type Theme } from '@/constants/theme';
+import { mostSignificant } from '@/constants/condition-priority';
+import { radius, spacing, typography, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatSavedTime } from '@/services/time';
 import type { WeatherData } from '@/services/weather-data';
 
+import { FeelAndHearIcon } from './icons';
 import { MuteButton } from './mute-button';
+import { SQUARE_BUTTON_ICON, SQUARE_BUTTON_SIZE, SquareButton, squareButtonIconColor } from './square-button';
 
 type Props = {
   weather: WeatherData;
   // Shows a "Developer mode" pill so test weather is never mistaken for real.
   developerMode: boolean;
-  // Shown under the title, e.g. the time-of-day greeting.
+  // Top left, beside the buttons, e.g. the location.
+  location?: ReactNode;
+  // Under the top row, e.g. a note that the location is a fallback.
+  locationNote?: ReactNode;
+  // The headline under the top row, e.g. the time-of-day greeting.
   greeting?: ReactNode;
 };
 
-export function ScreenHeader({ weather, developerMode, greeting }: Props) {
+export function ScreenHeader({ weather, developerMode, location, locationNote, greeting }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
   const source = describeSource(weather);
@@ -29,9 +35,34 @@ export function ScreenHeader({ weather, developerMode, greeting }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header" accessibilityLabel="AtmosHear">
-        AtmosHear
-      </Text>
+      {/* Top row: location on the left, vertically centered on the
+          buttons; Feel & hear (white) and the quick mute (deepBlue) as
+          rounded square buttons on the right. */}
+      <View style={styles.topRow}>
+        <View style={styles.location}>{location}</View>
+        <View style={styles.controls}>
+          {/* Opens the cues for the current most significant condition.
+              router.push rather than <Link asChild>: Link drops a
+              pressed-state style function, which left this button without
+              its square. */}
+          <SquareButton
+            variant="card"
+            onPress={() =>
+              router.push({
+                pathname: '/feel-and-hear',
+                params: { condition: mostSignificant(weather.current.conditions) },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Feel and hear"
+            accessibilityHint="Shows and plays the sound, vibration, and light for this weather"
+          >
+            <FeelAndHearIcon size={SQUARE_BUTTON_ICON} color={squareButtonIconColor(theme, 'card')} />
+          </SquareButton>
+          <MuteButton />
+        </View>
+      </View>
+      {locationNote}
       {developerMode && (
         <View style={styles.pill}>
           <Text style={styles.pillText}>Developer mode</Text>
@@ -43,20 +74,6 @@ export function ScreenHeader({ weather, developerMode, greeting }: Props) {
           {source.label}
         </Text>
       )}
-      {/* Top-right controls: Settings, with the quick mute under it. */}
-      <View style={styles.controls}>
-        <Link href="/settings" asChild>
-          <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Settings">
-            <SymbolView
-              name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
-              size={26}
-              tintColor={theme.colors.heading}
-              accessible={false}
-            />
-          </Pressable>
-        </Link>
-        <MuteButton />
-      </View>
     </View>
   );
 }
@@ -85,20 +102,26 @@ function describeSource(weather: WeatherData): { label: string; spoken: string }
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    // Title and greeting as one group, with the same small gap
-    // between each. The side padding matches the buttons' width on both
-    // sides, so text stays centered and never runs under them. Extra room
-    // below (32 in all) sets the group apart from the weather icon.
+    // Left-aligned, like the frames.
     container: {
-      alignItems: 'center',
-      gap: spacing.xs,
-      paddingHorizontal: 48,
-      marginBottom: spacing.sm,
+      alignItems: 'flex-start',
+      gap: spacing.sm,
     },
-    title: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: theme.colors.heading,
+    topRow: {
+      alignSelf: 'stretch',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: SQUARE_BUTTON_SIZE,
+    },
+    // Takes the room the buttons leave, so a long name wraps, never runs
+    // under them.
+    location: {
+      flex: 1,
+    },
+    controls: {
+      flexDirection: 'row',
+      gap: spacing.sm,
     },
     pill: {
       paddingHorizontal: spacing.sm + 2,
@@ -108,25 +131,13 @@ function createStyles(theme: Theme) {
       borderColor: theme.colors.heading,
     },
     pillText: {
-      fontSize: 13,
+      ...typography.caption,
       fontWeight: '700',
       color: theme.colors.heading,
     },
     note: {
-      fontSize: 13,
+      ...typography.caption,
       color: theme.colors.textSecondary,
-      textAlign: 'center',
-    },
-    controls: {
-      position: 'absolute',
-      top: -10,
-      right: 0,
-    },
-    iconButton: {
-      width: 48,
-      height: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
   });
 }

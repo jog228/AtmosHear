@@ -8,7 +8,7 @@ import { useIsForeground } from './use-is-foreground';
 import { usePreferences } from './use-preferences';
 
 // Loops the ambient sound for the given conditions while the app is in the
-// foreground and "Ambient weather sound" is on in Settings. Pass an empty
+// foreground and "Ambient weather sound" is on in Preferences. Pass an empty
 // list for silence (e.g. while the weather is loading). Returns `replay`,
 // which restarts the sound with a fade-in.
 export function useConditionSound(conditions: ConditionId[]) {

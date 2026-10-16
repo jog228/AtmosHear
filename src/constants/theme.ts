@@ -1,13 +1,19 @@
+import type { TextStyle } from 'react-native';
+
 import type { ConditionId } from './conditions';
 
 // The only file in the app that contains hex codes. Components read colors
 // through `useTheme()` by token name (e.g. `colors.textPrimary`).
 
-// Light palette. Contrast rules (WCAG AA) for light backgrounds:
-// - Small text may only use ink, deepBlue, or slate.
-// - periwinkle is for text 24px+ (or 19px+ bold), icons, and fills only.
-// - gray and sun are never text.
-// - Text on deepBlue or ink buttons is white.
+// Light palette. Contrast rules (WCAG AA) for light backgrounds, checked on
+// both mist and white:
+// - Small text may only use ink (17.4:1 on mist, 19.1:1 on white), deepBlue
+//   (10.9:1, 12.0:1), or slate (8.0:1, 8.8:1).
+// - periwinkle (3.7:1, 4.1:1) is for text 24px+ (or 19px+ bold), icons, and
+//   fills only.
+// - gray (2.8:1, 3.1:1) and sun (1.5:1, 1.6:1) are never text.
+// - Text on deepBlue (12.0:1) or ink (19.1:1) buttons is white. On sun,
+//   deepBlue (7.3:1) or ink (11.7:1).
 export const palette = {
   ink: '#090D27',
   deepBlue: '#1F2D80',
@@ -15,10 +21,13 @@ export const palette = {
   slate: '#484A57',
   gray: '#92939B',
   sun: '#FFBF4A',
+  // The clock-face sun in the illustrations, from design/frames/.
+  // Decorative only, never text.
+  sunPale: '#F9D898',
   white: '#FFFFFF',
-  mist: '#E8EDF2', // pale blue-gray page background
+  mist: '#EDF5FD', // pale blue page background, from design/frames/
   // TODO: awaiting final red from design team. Delete actions only: 6.5:1
-  // with white text on it, 5.5:1 as text on mist.
+  // with white text on it, 5.9:1 as text on mist.
   red: '#B3261E',
 };
 
@@ -43,6 +52,24 @@ export const darkPalette = {
   red: '#FF7B72',
 };
 
+// Named colors for the cue screens: light cue colors and each condition's
+// contrast pair (src/constants/condition-profiles.ts). The same in every
+// theme, since they describe the cue itself.
+export const cueColors = {
+  amber: palette.sun,
+  navy: palette.deepBlue,
+  ink: palette.ink,
+  white: palette.white,
+  slate: palette.slate,
+  periwinkle: palette.periwinkle,
+  mist: palette.mist,
+  iceBlue: darkPalette.iceBlue,
+  yellow: darkPalette.yellow,
+  midnight: darkPalette.navy,
+};
+
+export type CueColor = keyof typeof cueColors;
+
 export type ThemeName = 'light' | 'dark' | 'highContrast';
 
 export type ThemeColors = {
@@ -59,15 +86,26 @@ export type ThemeColors = {
   buttonText: string;
   secondaryButtonBackground: string;
   secondaryButtonText: string;
+  // The "playing" state (e.g. the amber pause button in the Sound
+  // library), and its icon or text.
+  highlight: string;
+  onHighlight: string;
   border: string;
   // Includes its own transparency.
   shadow: string;
+  // The Preferences toggle, after design/frames/12_Preferences.png: a
+  // filled track when on, an outlined one when off. Each thumb passes 3:1
+  // against its track (gray on white: 3.1:1).
   switchTrackOn: string;
+  switchThumbOn: string;
   switchTrackOff: string;
-  switchThumb: string;
+  switchBorderOff: string;
+  switchThumbOff: string;
 };
 
-// Frosted glass cards over soft condition-colored blobs.
+// Frosted glass cards over soft condition-colored blobs. Unused for now:
+// every theme has solid cards (glass: null), per design/frames/. Kept so it
+// can come back without a rewrite.
 //
 // Readability: card text must stay WCAG AA (4.5:1) over the worst case
 // behind it, which is a blob's center at full `blobOpacity` (blobs are
@@ -91,9 +129,50 @@ export type Glass = {
   blobOpacity: number;
 };
 
+// The dotted illustrations (the Weather hero and the sunrise/sunset arc).
+// Decorative: the same information is always in text.
+export type IllustrationColors = {
+  // The halftone dots around the sun, and the sun card's arc.
+  dots: string;
+  // The sun's edge, and the sun marker on the arc.
+  sun: string;
+  // The clock face inside the sun.
+  sunFace: string;
+  // The clock hands and tick marks.
+  hands: string;
+  // Solid clouds.
+  cloud: string;
+  // The rest are the Weather hero's condition patterns
+  // (src/components/hero/scene.ts). Marks never sit on top of dots of
+  // another color, and every one stands out from the page background.
+  // Heavy rain streaks.
+  streak: string;
+  // Snowflakes and sleet pellets, with an edge so white flakes still show
+  // on the pale page.
+  flake: string;
+  flakeEdge: string;
+  // Thunderstorm rings, outside to center, and the lightning bolt.
+  stormOuter: string;
+  stormMiddle: string;
+  stormCenter: string;
+  bolt: string;
+  // Clear and extreme heat: amber (sun) near the sun, then these outward.
+  burstMiddle: string;
+  burstOuter: string;
+  // Extreme cold: the crystal's arms and their tips.
+  crystal: string;
+  crystalTip: string;
+  // Severe alert, after design/frames/11_Weather_warning.png: alternating
+  // dark and light rings on an amber disc, the same in every theme.
+  alertDisc: string;
+  alertDark: string;
+  alertLight: string;
+};
+
 export type Theme = {
   name: ThemeName;
   colors: ThemeColors;
+  illustration: IllustrationColors;
   statusBarStyle: 'dark' | 'light';
   cardBorderWidth: number;
   // Null means solid cards and no blobs (also used when iOS Reduce
@@ -118,27 +197,43 @@ export const lightTheme: Theme = {
     buttonText: palette.white,
     secondaryButtonBackground: palette.ink,
     secondaryButtonText: palette.white,
+    // 11.7:1.
+    highlight: palette.sun,
+    onHighlight: palette.ink,
     border: palette.gray,
     shadow: withAlpha(palette.ink, 0.08),
     switchTrackOn: palette.deepBlue,
-    switchTrackOff: palette.gray,
-    switchThumb: palette.white,
+    switchThumbOn: palette.sun,
+    switchTrackOff: palette.white,
+    switchBorderOff: palette.gray,
+    switchThumbOff: palette.gray,
+  },
+  illustration: {
+    dots: palette.periwinkle,
+    sun: palette.sun,
+    sunFace: palette.sunPale,
+    hands: palette.deepBlue,
+    cloud: palette.deepBlue,
+    streak: palette.deepBlue,
+    flake: palette.white,
+    flakeEdge: palette.periwinkle,
+    stormOuter: palette.periwinkle,
+    stormMiddle: palette.deepBlue,
+    stormCenter: palette.ink,
+    bolt: palette.sun,
+    burstMiddle: palette.periwinkle,
+    burstOuter: palette.ink,
+    // iceBlue would vanish on mist, so the tips are deepBlue.
+    crystal: palette.periwinkle,
+    crystalTip: palette.deepBlue,
+    alertDisc: palette.sun,
+    alertDark: palette.ink,
+    alertLight: palette.white,
   },
   statusBarStyle: 'dark',
   cardBorderWidth: 0,
-  glass: {
-    tint: palette.white,
-    tintOpacity: 0.5,
-    tintOpacityByCondition: {
-      // Ink blob: slate text is 4.45:1 at 0.5, 4.8:1 at 0.55.
-      'thunderstorm': 0.55,
-    },
-    border: withAlpha(palette.white, 0.4),
-    borderTop: withAlpha(palette.white, 0.8),
-    blurTint: 'systemThinMaterialLight',
-    blurIntensity: 55,
-    blobOpacity: 0.55,
-  },
+  // Flat white cards and no blobs, like the frames in design/frames/.
+  glass: null,
   conditionColors: 'light',
 };
 
@@ -156,40 +251,52 @@ export const darkTheme: Theme = {
     buttonText: darkPalette.navy,
     secondaryButtonBackground: darkPalette.royalBlue,
     secondaryButtonText: darkPalette.white,
+    // Buttons are already yellow in dark mode, so playing is ice blue
+    // (15.3:1 with navy).
+    highlight: darkPalette.iceBlue,
+    onHighlight: darkPalette.navy,
     border: withAlpha(darkPalette.royalBlue, 0.6),
     // Shadows barely show on navy, so dark cards also get a 1px border.
     shadow: withAlpha(darkPalette.black, 0.35),
-    switchTrackOn: darkPalette.periwinkle,
-    switchTrackOff: withAlpha(darkPalette.gray, 0.4),
-    switchThumb: darkPalette.white,
+    // Yellow with a navy thumb, like dark mode's buttons.
+    switchTrackOn: darkPalette.yellow,
+    switchThumbOn: darkPalette.navy,
+    switchTrackOff: darkPalette.navy,
+    switchBorderOff: darkPalette.gray,
+    switchThumbOff: darkPalette.gray,
+  },
+  // A navy cloud would vanish on navy, so clouds are ice blue.
+  illustration: {
+    dots: darkPalette.periwinkle,
+    sun: darkPalette.yellow,
+    sunFace: darkPalette.yellow,
+    hands: darkPalette.navy,
+    cloud: darkPalette.iceBlue,
+    streak: darkPalette.iceBlue,
+    flake: darkPalette.iceBlue,
+    flakeEdge: darkPalette.iceBlue,
+    // A dark center would vanish on navy, so the rings deepen toward
+    // royalBlue instead (the yellow bolt is 4.4:1 on it).
+    stormOuter: darkPalette.iceBlue,
+    stormMiddle: darkPalette.periwinkle,
+    stormCenter: darkPalette.royalBlue,
+    bolt: darkPalette.yellow,
+    burstMiddle: darkPalette.periwinkle,
+    burstOuter: darkPalette.iceBlue,
+    crystal: darkPalette.periwinkle,
+    crystalTip: darkPalette.iceBlue,
+    alertDisc: palette.sun,
+    alertDark: palette.ink,
+    alertLight: palette.white,
   },
   statusBarStyle: 'light',
   cardBorderWidth: 1,
-  glass: {
-    // The page navy (darker than navyCard) keeps light text readable over
-    // bright yellow and ice-blue blobs.
-    tint: darkPalette.navy,
-    tintOpacity: 0.5,
-    tintOpacityByCondition: {
-      // Yellow blobs: gray text is 4.58:1 at 0.5 (passes, barely), 5.0:1
-      // at 0.55. Raised for margin.
-      'clear': 0.55,
-      'partly-cloudy': 0.55,
-      'thunderstorm': 0.55,
-      'extreme-heat': 0.55,
-      // Ice-blue blob: gray text is 4.19:1 at 0.5 (fails), 5.0:1 at 0.6.
-      'snow': 0.6,
-    },
-    border: withAlpha(darkPalette.white, 0.25),
-    borderTop: withAlpha(darkPalette.white, 0.45),
-    blurTint: 'systemThinMaterialDark',
-    blurIntensity: 55,
-    blobOpacity: 0.55,
-  },
+  // Solid navyCard cards, like light mode's flat white ones.
+  glass: null,
   conditionColors: 'dark',
 };
 
-// Overrides both light and dark when turned on in Settings.
+// Overrides both light and dark when turned on in Preferences.
 export const highContrastTheme: Theme = {
   name: 'highContrast',
   colors: {
@@ -204,11 +311,37 @@ export const highContrastTheme: Theme = {
     buttonText: palette.ink,
     secondaryButtonBackground: palette.white,
     secondaryButtonText: palette.ink,
+    // Buttons are sun in high contrast, so playing is white (19.1:1).
+    highlight: palette.white,
+    onHighlight: palette.ink,
     border: palette.white,
     shadow: withAlpha(palette.ink, 0),
     switchTrackOn: palette.sun,
-    switchTrackOff: palette.white,
-    switchThumb: palette.ink,
+    switchThumbOn: palette.ink,
+    switchTrackOff: palette.ink,
+    switchBorderOff: palette.white,
+    switchThumbOff: palette.white,
+  },
+  illustration: {
+    dots: palette.white,
+    sun: palette.sun,
+    sunFace: palette.sun,
+    hands: palette.ink,
+    cloud: palette.white,
+    streak: palette.white,
+    flake: palette.white,
+    flakeEdge: palette.white,
+    stormOuter: palette.white,
+    stormMiddle: palette.white,
+    stormCenter: palette.white,
+    bolt: palette.sun,
+    burstMiddle: palette.white,
+    burstOuter: palette.white,
+    crystal: palette.white,
+    crystalTip: palette.white,
+    alertDisc: palette.sun,
+    alertDark: palette.ink,
+    alertLight: palette.white,
   },
   statusBarStyle: 'light',
   cardBorderWidth: 2,
@@ -225,9 +358,40 @@ export function withAlpha(hex: string, alpha: number): string {
   return `${hex}${byte}`;
 }
 
+// The font family for all text. Undefined means the system font (San
+// Francisco on iOS, Roboto on Android). To use the design font: load it with
+// expo-font, then put its name here.
+export const FONT_FAMILY: string | undefined = undefined;
+
+// Text styles from the frames in design/frames/: big, bold, left-aligned
+// headlines. Spread one into a style, then add a color:
+// `{ ...typography.title, color: theme.colors.textPrimary }`.
+//
+// These are the sizes at the default text size. The phone's text size
+// setting (Dynamic Type) scales them, line heights too. Display and h1 are
+// already huge, so cap their growth with
+// `maxFontSizeMultiplier={LARGE_TEXT_MAX_SCALE}`.
+export const typography = {
+  // The big temperature and condition names. Tight line height: these are
+  // short, usually a single line.
+  display: { fontFamily: FONT_FAMILY, fontSize: 88, lineHeight: 88, fontWeight: '700', letterSpacing: -2 },
+  // Screen titles.
+  h1: { fontFamily: FONT_FAMILY, fontSize: 56, lineHeight: 60, fontWeight: '700', letterSpacing: -1 },
+  // Section headlines and the greeting.
+  h2: { fontFamily: FONT_FAMILY, fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -0.5 },
+  // Row titles, card values, and card headings.
+  title: { fontFamily: FONT_FAMILY, fontSize: 20, lineHeight: 26, fontWeight: '700' },
+  body: { fontFamily: FONT_FAMILY, fontSize: 17, lineHeight: 24, fontWeight: '400' },
+  // Labels and notes.
+  caption: { fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 18, fontWeight: '400' },
+} as const satisfies Record<string, TextStyle>;
+
+export const LARGE_TEXT_MAX_SCALE = 1.3;
+
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
-export const radius = { md: 16, lg: 24, pill: 999 };
+// `button` is the rounded square buttons on the Weather screen.
+export const radius = { md: 16, button: 20, lg: 24, pill: 999 };
 
 export function cardShadow(theme: Theme) {
   return {
