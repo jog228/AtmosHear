@@ -9,7 +9,9 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
 import { DAY_NAMES, repeatSummary, timeText } from './alarm-format';
+import { ALARM_TONES, DEFAULT_TONE, TONE_IDS, type AlarmTone } from './alarm-tones';
 import { DEFAULT_LABEL, type Alarm, type AlarmDraft } from './alarm-types';
+import { useTonePreview } from './tone-preview';
 
 type Props = {
   visible: boolean;
@@ -24,15 +26,15 @@ type Props = {
 };
 
 // The Add Alarm / Edit Alarm sheet, like Apple's Clock: Cancel, title, Save,
-// a scroll-wheel time picker, then Repeat and Label. Repeat opens a list of
-// days inside the sheet. Give it a new `key` each time it opens so it
+// a scroll-wheel time picker, then Repeat, Label, and Sound. Repeat and
+// Sound open lists inside the sheet. Give it a new `key` each time it opens so it
 // starts fresh.
 export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onClose }: Props) {
   const colors = useAlarmColors();
   const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<AlarmDraft>(() => startingDraft(alarm));
-  const [page, setPage] = useState<'main' | 'repeat'>('main');
+  const [page, setPage] = useState<'main' | 'repeat' | 'sound'>('main');
   const [message, setMessage] = useState<string | null>(null);
 
   const change = (changes: Partial<AlarmDraft>) => {
@@ -67,7 +69,7 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
           <SheetHeader
             colors={colors}
             left={{ label: 'Back', onPress: () => setPage('main'), back: true }}
-            title="Repeat"
+            title={page === 'repeat' ? 'Repeat' : 'Sound'}
           />
         )}
 
@@ -118,6 +120,23 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
                     accessibilityLabel="Label"
                   />
                 </View>
+                <Pressable
+                  style={[styles.row, styles.divider]}
+                  onPress={() => setPage('sound')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Sound, ${ALARM_TONES[draft.tone].label}`}
+                >
+                  <Text style={styles.rowLabel}>Sound</Text>
+                  <Text style={styles.rowValue} numberOfLines={1}>
+                    {ALARM_TONES[draft.tone].label}
+                  </Text>
+                  <SymbolView
+                    name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                    size={14}
+                    tintColor={colors.secondaryText}
+                    accessible={false}
+                  />
+                </Pressable>
               </View>
 
               {message && (
@@ -137,6 +156,8 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
                 </Pressable>
               )}
             </>
+          ) : page === 'sound' ? (
+            <ToneList selected={draft.tone} onSelect={(tone) => change({ tone })} />
           ) : (
             <View style={styles.group}>
               {DAY_NAMES.map((name, day) => {
@@ -262,11 +283,78 @@ function TimePicker({
   );
 }
 
-// A new alarm starts at the next whole hour, labeled "Alarm", not repeating.
-function startingDraft(alarm: Alarm | null): AlarmDraft {
-  if (alarm) return { hour: alarm.hour, minute: alarm.minute, repeatDays: alarm.repeatDays, label: alarm.label };
-  return { hour: (new Date().getHours() + 1) % 24, minute: 0, repeatDays: [], label: DEFAULT_LABEL };
+// The tones, like the Sound library's rows: name and description, a check
+// on the chosen one, and a round play button that previews it. One preview
+// at a time; it stops when this list closes (Back, Save, or Cancel).
+function ToneList({ selected, onSelect }: { selected: AlarmTone; onSelect: (tone: AlarmTone) => void }) {
+  const colors = useAlarmColors();
+  const styles = createStyles(colors);
+  const preview = useTonePreview();
+
+  return (
+    <View style={styles.group}>
+      {TONE_IDS.map((tone, i) => {
+        const { label, description } = ALARM_TONES[tone];
+        const checked = tone === selected;
+        const playing = preview.playing === tone;
+        return (
+          <View key={tone} style={[styles.toneRow, i > 0 && styles.divider]}>
+            <Pressable
+              style={styles.toneMain}
+              onPress={() => onSelect(tone)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked }}
+              accessibilityLabel={`${label}, ${description}`}
+            >
+              <View style={styles.toneCheck}>
+                {checked && (
+                  <SymbolView
+                    name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                    size={18}
+                    tintColor={colors.accent}
+                    accessible={false}
+                  />
+                )}
+              </View>
+              <View style={styles.toneText}>
+                <Text style={styles.toneName}>{label}</Text>
+                <Text style={styles.toneDescription}>{description}</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.playButton, pressed && styles.pressed]}
+              onPress={() => preview.toggle(tone)}
+              accessibilityRole="button"
+              accessibilityLabel={`${playing ? 'Stop' : 'Play'} ${label}`}
+            >
+              <SymbolView
+                name={
+                  playing
+                    ? { ios: 'stop.fill', android: 'stop', web: 'stop' }
+                    : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
+                }
+                size={18}
+                tintColor={colors.onAccent}
+                accessible={false}
+              />
+            </Pressable>
+          </View>
+        );
+      })}
+    </View>
+  );
 }
+
+// A new alarm starts at the next whole hour, labeled "Alarm", not
+// repeating, with the default tone.
+function startingDraft(alarm: Alarm | null): AlarmDraft {
+  if (alarm) {
+    return { hour: alarm.hour, minute: alarm.minute, repeatDays: alarm.repeatDays, label: alarm.label, tone: alarm.tone };
+  }
+  return { hour: (new Date().getHours() + 1) % 24, minute: 0, repeatDays: [], label: DEFAULT_LABEL, tone: DEFAULT_TONE };
+}
+
+const PLAY_SIZE = 48;
 
 function createStyles(colors: AlarmColors) {
   return StyleSheet.create({
@@ -378,6 +466,44 @@ function createStyles(colors: AlarmColors) {
       fontSize: 17,
       fontWeight: '600',
       color: colors.onDanger,
+    },
+    toneRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    toneMain: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: PLAY_SIZE,
+    },
+    toneCheck: {
+      width: 20,
+      alignItems: 'center',
+    },
+    toneText: {
+      flex: 1,
+    },
+    toneName: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    toneDescription: {
+      fontSize: 15,
+      color: colors.secondaryText,
+    },
+    playButton: {
+      width: PLAY_SIZE,
+      height: PLAY_SIZE,
+      borderRadius: PLAY_SIZE / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.accent,
     },
     pressed: {
       opacity: 0.7,

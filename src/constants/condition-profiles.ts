@@ -85,7 +85,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     contrastPair: { fg: 'amber', bg: 'navy' },
     // Slow, steady.
     haptic: taps('soft', [0, 600, 1200, 1800]),
-    sound: require('../../assets/sounds/clear.m4a'),
+    // The loudness reference (-27.3 LUFS).
+    sound: require('../../assets/sounds/new-clear.m4a'),
   },
   'partly-cloudy': {
     label: 'Partly cloudy',
@@ -140,8 +141,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // Quick and slightly uneven, like drops.
     haptic: taps('light', [0, 110, 260, 350, 500, 620, 760, 850, 1000, 1130]),
     // Intentionally a step softer than heavy rain (-33.5 LUFS vs heavy
-    // rain's -24.2 after its correction). Don't normalize it.
-    sound: require('../../assets/sounds/light-rain.m4a'),
+    // rain's -24.3). Don't normalize it.
+    sound: require('../../assets/sounds/new-light-rain.m4a'),
   },
   'heavy-rain': {
     label: 'Heavy rain',
@@ -156,10 +157,9 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     contrastPair: { fg: 'white', bg: 'navy' },
     // Rapid and strong.
     haptic: tapsEvery('heavy', 70, 0, 1400),
-    sound: require('../../assets/sounds/heavy-rain.m4a'),
-    // Meant to sit between clear and thunderstorm, but the file measures
-    // -21.1 LUFS (same as thunderstorm), so this brings it to about -24.2.
-    soundVolume: 0.7,
+    // Exported at -24.3 LUFS, between clear (-27.3) and thunderstorm
+    // (-21.2), so no correction.
+    sound: require('../../assets/sounds/new-heavy-rain.m4a'),
   },
   'thunderstorm': {
     label: 'Thunderstorm',
@@ -200,7 +200,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: taps('soft', [0, 250, 500, 1100, 1350, 1600]),
     // Intentionally a bit softer to feel hushed (-28.3 LUFS vs clear's
     // -27.3). Don't normalize it up.
-    sound: require('../../assets/sounds/snow.m4a'),
+    sound: require('../../assets/sounds/new-snow.m4a'),
   },
   'sleet': {
     label: 'Sleet',
@@ -221,10 +221,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     contrastPair: { fg: 'ink', bg: 'iceBlue' },
     // Irregular and sharp.
     haptic: taps('rigid', [0, 90, 340, 400, 720, 1010, 1080]),
-    sound: require('../../assets/sounds/sleet.m4a'),
-    // sleet.m4a measures -21.0 LUFS vs clear.m4a at -27.3 (6.3 LU louder).
-    // 0.48 = -6.3 dB. Remove once the file is re-exported to match.
-    soundVolume: 0.48,
+    // Exported to match clear (-27.3 LUFS), so no correction.
+    sound: require('../../assets/sounds/new-sleet.m4a'),
   },
   'fog': {
     label: 'Fog',
@@ -266,7 +264,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
       ...taps('medium', [200, 300, 500]),
       ...taps('heavy', [400]),
     ],
-    sound: require('../../assets/sounds/wind.m4a'),
+    sound: require('../../assets/sounds/new-wind.m4a'),
     // Gusty recording at -30.4 LUFS (3.1 LU under clear), so no correction.
     // Wind is a supporting layer: half its solo level under other sounds.
     supportingVolume: 0.5,
@@ -289,8 +287,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     contrastPair: { fg: 'ink', bg: 'amber' },
     // Steady and warm.
     haptic: tapsEvery('soft', 50, 0, 1500),
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // Matched to clear (-27.3 LUFS).
+    sound: require('../../assets/sounds/new-extreme-heat.m4a'),
   },
   'extreme-cold': {
     label: 'Extreme cold',

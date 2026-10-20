@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { LightOverlay } from '@/components/light-overlay';
+import { AlarmHost } from '@/features/alarms/alarm-host';
 import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
 import { PreferencesProvider, usePreferences } from '@/hooks/use-preferences';
 import type { Theme } from '@/constants/theme';
@@ -27,6 +28,8 @@ export default function RootLayout() {
         <OpeningPreferences>
           <ThemeProvider>
             <ThemedStack />
+            {/* Rings alarms (and opens the ringing screen) on any tab. */}
+            <AlarmHost />
             {/* Above every screen; never takes taps or VoiceOver focus. */}
             <LightOverlay />
           </ThemeProvider>
@@ -70,6 +73,13 @@ function ThemedStack() {
         <Stack.Screen name="feel-and-hear" options={{ title: 'Feel and hear', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         <Stack.Screen name="sounds" options={{ title: 'Sounds', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         <Stack.Screen name="condition/[id]" options={{ title: 'Condition', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
+        {/* Alarms: full screen, no header. The ringing screen can't be
+            swiped away; it closes itself when the alarm stops. */}
+        <Stack.Screen
+          name="alarm-ringing"
+          options={{ presentation: 'fullScreenModal', animation: 'fade', headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen name="bedside" options={{ presentation: 'fullScreenModal', animation: 'fade', headerShown: false }} />
         <Stack.Screen
           name="test-weather"
           options={{

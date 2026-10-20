@@ -30,7 +30,9 @@ export default function HomeScreen() {
   const pathname = usePathname();
   const [tab, setTab] = useState(pathname);
   if (TAB_PATHS.includes(pathname) && pathname !== tab) setTab(pathname);
-  const onWeatherTab = tab !== '/alarms' && tab !== '/preferences';
+  // Silent under a ringing alarm too (the alarm will later bring the
+  // weather sound in on purpose; see src/features/alarms/alarm-ringer.ts).
+  const onWeatherTab = tab !== '/alarms' && tab !== '/preferences' && pathname !== '/alarm-ringing';
   const conditions = state.status === 'ready' && onWeatherTab ? state.weather.current.conditions : [];
   // Every current condition with a sound plays as its own layer.
   const { replay } = useConditionSound(sortByPriority(conditions));

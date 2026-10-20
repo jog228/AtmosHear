@@ -1,7 +1,8 @@
 import { useCalendars } from 'expo-localization';
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ClockSun, HalftoneField } from '@/components/brand';
@@ -10,12 +11,17 @@ import { radius, spacing } from '@/constants/theme';
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
 import { AlarmEditor } from './alarm-editor';
 import { alarmSubtitle, timeText } from './alarm-format';
+import { askForNotificationsIfNeeded, rescheduleAlarmNotifications, useNotificationPermission } from './alarm-notifications';
+import { alarmRinger } from './alarm-ringer';
 import { AlarmRow } from './alarm-row';
+import { alarmStore } from './alarm-store';
 import type { Alarm, AlarmDraft } from './alarm-types';
+import { useBedsideOpen } from './bedside-screen';
 import { useAlarms } from './use-alarms';
 
-// The Alarms tab, modeled on the Alarms section of Apple's Clock app. Alarms
-// don't ring yet. Separate from the weather: only the base palette is shared.
+// The Alarms tab, modeled on the Alarms section of Apple's Clock app, plus
+// Bedside mode. Alarms ring through AlarmHost (alarm-host.tsx). Separate
+// from the weather: only the base palette is shared.
 export function AlarmsScreen() {
   const colors = useAlarmColors();
   const styles = createStyles(colors);
@@ -35,6 +41,15 @@ export function AlarmsScreen() {
     setSheet({ alarm });
   };
 
+  const permission = useNotificationPermission();
+  const bedsideOpen = useBedsideOpen();
+  // The first alarm switched on asks for notifications (once).
+  const askOnce = () => askForNotificationsIfNeeded(() => rescheduleAlarmNotifications(alarmStore.list()));
+
+  // A ringing alarm opens on top: close the sheet so it isn't left
+  // covering the ringing screen.
+  useEffect(() => alarmRinger.subscribe((ring) => ring && setSheet(null)), []);
+
   const deleteAlarm = (alarm: Alarm) => {
     remove(alarm.id);
     AccessibilityInfo.announceForAccessibility(`${timeText(alarm.hour, alarm.minute, uses24Hour)} alarm deleted`);
@@ -49,6 +64,7 @@ export function AlarmsScreen() {
     if (existing) update(existing.id, draft);
     else add(draft);
     setSheet(null);
+    askOnce();
     return null;
   };
 
@@ -99,6 +115,41 @@ export function AlarmsScreen() {
           )}
         </View>
 
+        {permission === 'denied' && (
+          <View style={styles.notice} accessible accessibilityRole="text">
+            <Text style={styles.noticeText}>
+              Notifications are off, so alarms only ring while AtmosHear is open. Turn them on in Settings to be woken
+              when it’s closed.
+            </Text>
+            <Pressable
+              onPress={() => Linking.openSettings()}
+              accessibilityRole="button"
+              accessibilityLabel="Open Settings"
+              style={styles.noticeButton}
+            >
+              <Text style={styles.noticeLink}>Open Settings</Text>
+            </Pressable>
+          </View>
+        )}
+
+        <View style={styles.bedside}>
+          <View style={styles.bedsideText}>
+            <Text style={styles.bedsideTitle}>Bedside mode</Text>
+            <Text style={styles.bedsideSubtitle}>Keeps the screen on, dimmed, so alarms ring with sound.</Text>
+          </View>
+          <Switch
+            value={bedsideOpen}
+            onValueChange={(on) => {
+              if (on) router.push('/bedside');
+            }}
+            trackColor={{ false: colors.switchOff, true: colors.accent }}
+            ios_backgroundColor={colors.switchOff}
+            thumbColor={bedsideOpen ? colors.switchThumbOn : colors.switchThumbOff}
+            accessibilityLabel="Bedside mode"
+            accessibilityHint="Shows a dim clock and keeps the screen on. Tap anywhere to exit."
+          />
+        </View>
+
         {loaded && alarms.length === 0 && (
           <View style={styles.empty}>
             <ClockSun size={160} live />
@@ -116,7 +167,10 @@ export function AlarmsScreen() {
                 uses24Hour={uses24Hour}
                 editing={editing}
                 onPress={() => openSheet(alarm)}
-                onToggle={(enabled) => toggle(alarm.id, enabled)}
+                onToggle={(enabled) => {
+                  toggle(alarm.id, enabled);
+                  if (enabled) askOnce();
+                }}
                 onDelete={() => deleteAlarm(alarm)}
                 divider={i > 0}
               />
@@ -204,6 +258,52 @@ function createStyles(colors: AlarmColors) {
       fontSize: 17,
       color: colors.secondaryText,
       textAlign: 'center',
+    },
+    notice: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      borderWidth: colors.cardBorderWidth,
+      borderColor: colors.separator,
+      padding: spacing.md,
+      gap: spacing.xs,
+    },
+    noticeText: {
+      fontSize: 15,
+      color: colors.text,
+    },
+    noticeButton: {
+      minHeight: 44,
+      justifyContent: 'center',
+      alignSelf: 'flex-start',
+    },
+    noticeLink: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    bedside: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      borderWidth: colors.cardBorderWidth,
+      borderColor: colors.separator,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      minHeight: 64,
+    },
+    bedsideText: {
+      flex: 1,
+    },
+    bedsideTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    bedsideSubtitle: {
+      fontSize: 15,
+      color: colors.secondaryText,
     },
     list: {
       backgroundColor: colors.card,

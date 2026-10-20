@@ -1,32 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 
-import { loadAlarms, saveAlarms } from './alarm-storage';
+import { alarmStore, withOnceAt } from './alarm-store';
 import { DEFAULT_LABEL, type Alarm, type AlarmDraft } from './alarm-types';
 
-// The saved alarms, earliest first, plus actions that change them. Every
-// change is saved right away, so alarms survive closing the app.
+// The saved alarms, earliest first, plus actions that change them. Shared
+// through alarmStore, so every screen (and the ringer) sees the same list.
 export function useAlarms() {
-  const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  // Don't save until the saved list has loaded, or it would be wiped.
-  const ready = useRef(false);
-
+  const alarms = useSyncExternalStore(
+    (listener) => alarmStore.subscribe(listener),
+    () => alarmStore.list(),
+  );
+  const loaded = useSyncExternalStore(
+    (listener) => alarmStore.subscribe(listener),
+    () => alarmStore.isLoaded(),
+  );
   useEffect(() => {
-    loadAlarms().then((saved) => {
-      setAlarms(saved);
-      setLoaded(true);
-      ready.current = true;
-    });
+    alarmStore.load();
   }, []);
-
-  const change = (update: (current: Alarm[]) => Alarm[]) => {
-    if (!ready.current) return;
-    setAlarms((current) => {
-      const next = update(current);
-      saveAlarms(next);
-      return next;
-    });
-  };
 
   const sorted = useMemo(() => [...alarms].sort(compareAlarms), [alarms]);
 
@@ -35,13 +25,20 @@ export function useAlarms() {
     loaded,
     // New alarms start switched on.
     add: (draft: AlarmDraft) =>
-      change((current) => [...current, { ...clean(draft), id: newId(), enabled: true, createdAt: Date.now() }]),
+      alarmStore.change((current) => [
+        ...current,
+        withOnceAt({ ...clean(draft), id: newId(), enabled: true, createdAt: Date.now() }, Date.now()),
+      ]),
     // Saving an edit switches the alarm back on, like Apple's Clock.
     update: (id: string, draft: AlarmDraft) =>
-      change((current) => current.map((alarm) => (alarm.id === id ? { ...alarm, ...clean(draft), enabled: true } : alarm))),
+      alarmStore.change((current) =>
+        current.map((alarm) => (alarm.id === id ? withOnceAt({ ...alarm, ...clean(draft), enabled: true }, Date.now()) : alarm)),
+      ),
     toggle: (id: string, enabled: boolean) =>
-      change((current) => current.map((alarm) => (alarm.id === id ? { ...alarm, enabled } : alarm))),
-    remove: (id: string) => change((current) => current.filter((alarm) => alarm.id !== id)),
+      alarmStore.change((current) =>
+        current.map((alarm) => (alarm.id === id ? withOnceAt({ ...alarm, enabled }, Date.now()) : alarm)),
+      ),
+    remove: (id: string) => alarmStore.change((current) => current.filter((alarm) => alarm.id !== id)),
     // Another alarm with the same time and repeat days, if there is one.
     findDuplicate: (draft: AlarmDraft, ignoreId?: string) =>
       alarms.find(
@@ -65,6 +62,7 @@ function clean(draft: AlarmDraft): AlarmDraft {
     minute: draft.minute,
     repeatDays: [...new Set(draft.repeatDays)].sort((a, b) => a - b),
     label: draft.label.trim() || DEFAULT_LABEL,
+    tone: draft.tone,
   };
 }
 

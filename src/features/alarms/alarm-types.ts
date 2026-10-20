@@ -1,5 +1,6 @@
-// One alarm. Alarms don't ring yet; this is the data the list and editor
-// work with.
+import type { AlarmTone } from './alarm-tones';
+
+// One alarm: the data the list, the editor, and the ringer work with.
 export type Alarm = {
   id: string;
   // 24-hour clock: 0-23 and 0-59.
@@ -9,12 +10,18 @@ export type Alarm = {
   // Days it repeats, 0 = Sunday ... 6 = Saturday. Empty = rings once.
   repeatDays: number[];
   label: string;
+  // Which sound it rings with (alarm-tones.ts). Alarms saved before tones
+  // existed load as the default.
+  tone: AlarmTone;
+  // A non-repeating alarm's ring time (ms since 1970), set when it's
+  // switched on or saved. Once it has passed, the alarm switches off.
+  onceAt?: number;
   // Milliseconds since 1970; breaks ties when two alarms share a time.
   createdAt: number;
 };
 
-// What the editor fills in. The id, createdAt, and enabled are set when it's
-// saved.
-export type AlarmDraft = Pick<Alarm, 'hour' | 'minute' | 'repeatDays' | 'label'>;
+// What the editor fills in. The id, createdAt, enabled, and onceAt are set
+// when it's saved.
+export type AlarmDraft = Pick<Alarm, 'hour' | 'minute' | 'repeatDays' | 'label' | 'tone'>;
 
 export const DEFAULT_LABEL = 'Alarm';

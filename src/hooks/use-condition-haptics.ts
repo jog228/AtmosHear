@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import type { ConditionId } from '@/constants/conditions';
 import type { HapticPattern } from '@/constants/haptics';
-import { conditionPatterns, hapticPlayer } from '@/services/haptics';
+import { conditionPatterns } from '@/services/condition-haptics';
+import { hapticPlayer } from '@/services/haptics';
 
 import { useIsForeground } from './use-is-foreground';
 import { usePreferences } from './use-preferences';

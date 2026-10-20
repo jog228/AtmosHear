@@ -8,6 +8,7 @@ import { conditionProfiles } from '@/constants/condition-profiles';
 import type { ConditionId } from '@/constants/conditions';
 import { getTestWeatherOption } from '@/constants/test-weather';
 import { type Theme } from '@/constants/theme';
+import { testAlarmNow } from '@/features/alarms/test-alarm';
 import { formatClockTime } from '@/features/preferences/opening-time';
 import { TimePickerSheet } from '@/features/preferences/time-picker-sheet';
 import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
@@ -16,7 +17,8 @@ import { useReduceTransparency } from '@/hooks/use-reduce-transparency';
 import { announceAlert } from '@/hooks/use-alert-sound';
 import { useTheme } from '@/hooks/use-theme';
 import { alertSound } from '@/services/alert-sound';
-import { conditionPatterns, hapticPlayer } from '@/services/haptics';
+import { conditionPatterns } from '@/services/condition-haptics';
+import { hapticPlayer } from '@/services/haptics';
 import type { DevWeatherSource } from '@/services/preferences';
 
 import { ActionRow, OptionGroup, RowGroup, SettingsSection, SwitchRow, ValueRow } from './settings-rows';
@@ -70,6 +72,15 @@ export function DeveloperSettings() {
               description="Plays the severe alert beeps, even with ambient sound off."
               accessibilityHint="Plays the severe weather alert sound three times"
               onPress={() => alertSound.play(() => option.alert && announceAlert(option.alert))}
+              divider
+            />
+          )}
+          {developerMode && (
+            <ActionRow
+              label="Test alarm now"
+              description="Rings right away with the first alarm’s sound (or Morning)."
+              accessibilityHint="Opens the ringing alarm screen with sound and vibration"
+              onPress={testAlarmNow}
               divider
             />
           )}

@@ -17,6 +17,8 @@ export type AlarmColors = {
   dimmedText: string;
   // Text buttons (Edit, Done, +, Cancel, Save) and switched-on switches.
   accent: string;
+  // Text and icons on an accent fill (the Stop button, play buttons).
+  onAccent: string;
   switchOff: string;
   switchThumbOn: string;
   switchThumbOff: string;
@@ -38,6 +40,8 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     // 8.8:1 on white. gray would look more like Apple's but fails AA.
     dimmedText: palette.slate,
     accent: palette.deepBlue,
+    // 12:1.
+    onAccent: palette.white,
     // 3.1:1 on white, enough for a control.
     switchOff: palette.gray,
     switchThumbOn: palette.white,
@@ -56,6 +60,8 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     // 7.8:1 on navyCard.
     dimmedText: darkPalette.gray,
     accent: darkPalette.yellow,
+    // 13.5:1.
+    onAccent: darkPalette.navy,
     switchOff: withAlpha(darkPalette.gray, 0.4),
     // Navy on the yellow track; white when off.
     switchThumbOn: darkPalette.navy,
@@ -75,6 +81,8 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     // 6.3:1 on ink.
     dimmedText: palette.gray,
     accent: palette.sun,
+    // 11.7:1.
+    onAccent: palette.ink,
     switchOff: palette.white,
     switchThumbOn: palette.ink,
     switchThumbOff: palette.ink,

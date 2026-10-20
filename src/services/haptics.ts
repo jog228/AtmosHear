@@ -1,9 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
-import { sortByPriority } from '@/constants/condition-priority';
-import { conditionProfiles } from '@/constants/condition-profiles';
-import type { ConditionId } from '@/constants/conditions';
 import { COMBINED_PATTERN_GAP_MS, type HapticPattern, type HapticStyle, type HapticTap } from '@/constants/haptics';
 
 const IMPACT_STYLES: Record<HapticStyle, Haptics.ImpactFeedbackStyle> = {
@@ -15,7 +12,8 @@ const IMPACT_STYLES: Record<HapticStyle, Haptics.ImpactFeedbackStyle> = {
 };
 
 // Plays vibration patterns as timed taps with expo-haptics, so it works in
-// Expo Go. Only one sequence plays at a time: starting a new one cancels
+// Expo Go. Knows nothing about weather, so alarms use it too (the weather
+// patterns come from condition-haptics.ts). Only one sequence plays at a time: starting a new one cancels
 // the rest of the old one. Patterns never loop. Each tap is also sent to
 // tap listeners at the moment it plays (the cue screens' pulsing rings), so
 // what you see can't drift from what you feel.
@@ -78,15 +76,6 @@ function tapNow(style: HapticStyle) {
   if (Platform.OS === 'web') return;
   // Fails quietly where haptics aren't available.
   Haptics.impactAsync(IMPACT_STYLES[style]).catch(() => {});
-}
-
-// The patterns for a set of conditions: the most significant one's (same
-// order as the icon), then the next one's. ['wind', 'light-rain'] -> light
-// rain, then wind.
-export function conditionPatterns(ids: ConditionId[]): HapticPattern[] {
-  return sortByPriority(ids)
-    .slice(0, 2)
-    .map((id) => conditionProfiles[id].haptic);
 }
 
 export const hapticPlayer = new HapticPlayer();
