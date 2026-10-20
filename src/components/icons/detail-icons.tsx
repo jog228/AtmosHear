@@ -3,7 +3,7 @@ import { ring, row, type Dot } from './shapes';
 
 // Dotted icons for the detail cards and the sun card, matching
 // design/frames/06_Weather_home.png. Wind, rain, UV, and snow reuse the
-// condition icons (see condition-icons.tsx).
+// condition icons (see condition-shapes.ts).
 
 // A halftone drop (a grid of dots inside a drop shape), with a small dot
 // above it.

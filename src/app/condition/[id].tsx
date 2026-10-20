@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CueIllustration } from '@/components/cue-illustration';
 import { CueRows } from '@/components/cue-rows';
 import { ConditionName, PlayAllButton } from '@/components/cue-screen-parts';
-import { WeatherHero } from '@/components/weather-hero';
 import { CONDITION_IDS, type ConditionId } from '@/constants/conditions';
 import { spacing, typography, type Theme } from '@/constants/theme';
 import { useCuePreview } from '@/hooks/use-cue-preview';
@@ -22,7 +22,7 @@ export default function ConditionScreen() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
       <View style={styles.hero}>
-        <WeatherHero conditions={[condition]} size={260} visible />
+        <CueIllustration condition={condition} size={260} playing={playing} />
       </View>
       <View>
         <Text style={styles.caption}>Condition</Text>

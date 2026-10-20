@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
+import { ClockSun } from '@/components/brand';
 import { spacing } from '@/constants/theme';
 
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
@@ -22,8 +23,8 @@ type Props = {
 
 const DELETE_WIDTH = 88;
 
-// One alarm, like Apple's Clock: big time, "Label, repeat" underneath, and
-// a switch. Swipe left (or tap the red control in edit mode) for Delete.
+// One alarm, like Apple's Clock: a small clock-face sun showing its time,
+// big time, "Label, repeat" underneath, and a switch. Swipe left (or tap the red control in edit mode) for Delete.
 export function AlarmRow({ alarm, uses24Hour, editing, onPress, onToggle, onDelete, divider }: Props) {
   const colors = useAlarmColors();
   const styles = createStyles(colors);
@@ -69,6 +70,7 @@ export function AlarmRow({ alarm, uses24Hour, editing, onPress, onToggle, onDele
             />
           </Pressable>
         )}
+        <ClockSun size={44} hour={alarm.hour} minute={alarm.minute} dimmed={!alarm.enabled} />
         <Pressable
           style={styles.text}
           onPress={onPress}

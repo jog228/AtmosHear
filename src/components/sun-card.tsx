@@ -16,7 +16,7 @@ type Props = {
   weather: WeatherData;
   place: Place;
   // False while another tab is showing: stops the once-a-minute countdown
-  // update.
+  // and clock update.
   visible: boolean;
 };
 
@@ -59,7 +59,7 @@ export function SunCard({ weather, place, visible }: Props) {
         <SunTime label="Sunset" time={sunset} icon={SunsetIcon} color={theme.colors.accent} theme={theme} alignRight />
       </View>
 
-      <SunArc progress={progress} />
+      <SunArc progress={progress} now={now} />
 
       <Text style={styles.status}>{status}</Text>
     </GlassCard>

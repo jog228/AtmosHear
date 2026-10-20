@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ClockSun, HalftoneField } from '@/components/brand';
 import { radius, spacing } from '@/constants/theme';
 
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
@@ -85,11 +86,26 @@ export function AlarmsScreen() {
 
       {/* iOS keeps the list clear of the tab bar. */}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        <Text style={styles.title} accessibilityRole="header">
-          Alarms
-        </Text>
+        {/* The title, with a clock-face sun showing the time over a dot
+            field (decorative), like the Feel & hear heading. */}
+        <View style={styles.header}>
+          <Text style={styles.title} accessibilityRole="header">
+            Alarms
+          </Text>
+          {alarms.length > 0 && (
+            <HalftoneField size={HEADER_SIZE} pattern="rings" hole>
+              <ClockSun size={HEADER_SIZE / 3} live />
+            </HalftoneField>
+          )}
+        </View>
 
-        {loaded && alarms.length === 0 && <Text style={styles.empty}>No alarms yet. Tap + to add one.</Text>}
+        {loaded && alarms.length === 0 && (
+          <View style={styles.empty}>
+            <ClockSun size={160} live />
+            <Text style={styles.emptyTitle}>No alarms yet.</Text>
+            <Text style={styles.emptyHint}>Tap + to add one.</Text>
+          </View>
+        )}
 
         {alarms.length > 0 && (
           <View style={styles.list}>
@@ -125,6 +141,8 @@ export function AlarmsScreen() {
   );
 }
 
+const HEADER_SIZE = 132;
+
 function createStyles(colors: AlarmColors) {
   return StyleSheet.create({
     screen: {
@@ -157,16 +175,35 @@ function createStyles(colors: AlarmColors) {
       paddingBottom: spacing.xl,
       gap: spacing.md,
     },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+      minHeight: HEADER_SIZE,
+    },
     title: {
+      flexShrink: 1,
       fontSize: 34,
       fontWeight: '700',
       color: colors.text,
     },
     empty: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+    },
+    emptyTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      marginTop: spacing.sm,
+    },
+    emptyHint: {
       fontSize: 17,
       color: colors.secondaryText,
       textAlign: 'center',
-      marginTop: spacing.xl,
     },
     list: {
       backgroundColor: colors.card,

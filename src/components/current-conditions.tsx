@@ -10,20 +10,19 @@ import type { CurrentWeather, DailyForecast } from '@/services/weather-data';
 
 import { WeatherHero } from './weather-hero';
 
-// Fits the hero, condition name, temperature, and detail cards on one
-// iPhone screen at the default text size.
-const HERO_SIZE = 232;
+// The condition PNG's size from before the redesign.
+const HERO_SIZE = 220;
 
 type Props = {
   current: CurrentWeather;
   // Today's high and low, shown beside the temperature. Missing when a saved
   // forecast has no days left.
   today?: DailyForecast;
-  // During a severe alert, tapping the hero replays the alert beeps.
+  // During a severe alert, tapping the icon replays the alert beeps.
   alertActive: boolean;
-  // Tapping the hero replays the condition's sound and vibration.
+  // Tapping the icon replays the condition's sound and vibration.
   onReplay: () => void;
-  // False while another tab is showing: pauses the hero's clock and motion.
+  // False while another tab is showing: pauses the hero's breathing.
   visible: boolean;
 };
 
@@ -43,7 +42,7 @@ export function CurrentConditions({ current, today, alertActive, onReplay, visib
 
   return (
     <View style={styles.container}>
-      {/* No visible button: the illustration itself is the control. */}
+      {/* No visible button: the icon itself is the control. */}
       <Pressable
         onPress={onReplay}
         accessibilityRole="button"
@@ -94,13 +93,13 @@ export function CurrentConditions({ current, today, alertActive, onReplay, visib
 
 function createStyles(theme: Theme) {
   return StyleSheet.create({
-    // The hero stays centered, like the frames; the text below is
+    // The icon stays centered; the text below is
     // left-aligned, close under it.
     container: {
       alignItems: 'center',
       gap: spacing.xs,
     },
-    // Subtle cue that the hero is tappable.
+    // Subtle cue that the icon is tappable.
     pressed: {
       transform: [{ scale: 0.94 }],
       opacity: 0.85,

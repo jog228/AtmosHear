@@ -129,41 +129,21 @@ export type Glass = {
   blobOpacity: number;
 };
 
-// The dotted illustrations (the Weather hero and the sunrise/sunset arc).
+// The dotted brand illustrations (src/components/brand/: the clock-face
+// sun, the halftone field, the dot rings) and the sun card's arc.
 // Decorative: the same information is always in text.
 export type IllustrationColors = {
-  // The halftone dots around the sun, and the sun card's arc.
+  // Halftone and ring dots, and the sun card's arc.
   dots: string;
-  // The sun's edge, and the sun marker on the arc.
+  // The sun's edge.
   sun: string;
   // The clock face inside the sun.
   sunFace: string;
   // The clock hands and tick marks.
   hands: string;
-  // Solid clouds.
-  cloud: string;
-  // The rest are the Weather hero's condition patterns
-  // (src/components/hero/scene.ts). Marks never sit on top of dots of
-  // another color, and every one stands out from the page background.
-  // Heavy rain streaks.
-  streak: string;
-  // Snowflakes and sleet pellets, with an edge so white flakes still show
-  // on the pale page.
-  flake: string;
-  flakeEdge: string;
-  // Thunderstorm rings, outside to center, and the lightning bolt.
-  stormOuter: string;
-  stormMiddle: string;
-  stormCenter: string;
-  bolt: string;
-  // Clear and extreme heat: amber (sun) near the sun, then these outward.
-  burstMiddle: string;
-  burstOuter: string;
-  // Extreme cold: the crystal's arms and their tips.
-  crystal: string;
-  crystalTip: string;
   // Severe alert, after design/frames/11_Weather_warning.png: alternating
-  // dark and light rings on an amber disc, the same in every theme.
+  // dark and light rings on an amber disc, the same in every theme. For the
+  // weather warning screen (not built yet).
   alertDisc: string;
   alertDark: string;
   alertLight: string;
@@ -213,19 +193,6 @@ export const lightTheme: Theme = {
     sun: palette.sun,
     sunFace: palette.sunPale,
     hands: palette.deepBlue,
-    cloud: palette.deepBlue,
-    streak: palette.deepBlue,
-    flake: palette.white,
-    flakeEdge: palette.periwinkle,
-    stormOuter: palette.periwinkle,
-    stormMiddle: palette.deepBlue,
-    stormCenter: palette.ink,
-    bolt: palette.sun,
-    burstMiddle: palette.periwinkle,
-    burstOuter: palette.ink,
-    // iceBlue would vanish on mist, so the tips are deepBlue.
-    crystal: palette.periwinkle,
-    crystalTip: palette.deepBlue,
     alertDisc: palette.sun,
     alertDark: palette.ink,
     alertLight: palette.white,
@@ -271,20 +238,6 @@ export const darkTheme: Theme = {
     sun: darkPalette.yellow,
     sunFace: darkPalette.yellow,
     hands: darkPalette.navy,
-    cloud: darkPalette.iceBlue,
-    streak: darkPalette.iceBlue,
-    flake: darkPalette.iceBlue,
-    flakeEdge: darkPalette.iceBlue,
-    // A dark center would vanish on navy, so the rings deepen toward
-    // royalBlue instead (the yellow bolt is 4.4:1 on it).
-    stormOuter: darkPalette.iceBlue,
-    stormMiddle: darkPalette.periwinkle,
-    stormCenter: darkPalette.royalBlue,
-    bolt: darkPalette.yellow,
-    burstMiddle: darkPalette.periwinkle,
-    burstOuter: darkPalette.iceBlue,
-    crystal: darkPalette.periwinkle,
-    crystalTip: darkPalette.iceBlue,
     alertDisc: palette.sun,
     alertDark: palette.ink,
     alertLight: palette.white,
@@ -327,18 +280,6 @@ export const highContrastTheme: Theme = {
     sun: palette.sun,
     sunFace: palette.sun,
     hands: palette.ink,
-    cloud: palette.white,
-    streak: palette.white,
-    flake: palette.white,
-    flakeEdge: palette.white,
-    stormOuter: palette.white,
-    stormMiddle: palette.white,
-    stormCenter: palette.white,
-    bolt: palette.sun,
-    burstMiddle: palette.white,
-    burstOuter: palette.white,
-    crystal: palette.white,
-    crystalTip: palette.white,
     alertDisc: palette.sun,
     alertDark: palette.ink,
     alertLight: palette.white,

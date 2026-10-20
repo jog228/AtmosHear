@@ -1,4 +1,5 @@
 import type { AudioSource } from 'expo-audio';
+import type { ImageProps } from 'expo-image';
 
 import {
   ClearIcon,
@@ -28,10 +29,13 @@ export type ConditionProfile = {
   // Accent color for this condition (e.g. the detail card icons), for the
   // light and dark themes. Dark colors must reach 3:1 on the navy background.
   color: { light: string; dark: string };
-  // Dotted SVG icon from src/components/icons, drawn in one color. (The
-  // old PNGs in assets/icons/weather-icons are unused, kept until the team
-  // confirms the switch.)
+  // Dotted SVG icon from src/components/icons, drawn in one color, for
+  // small places (hourly, daily, detail cards, the Sound library).
   icon: DotIconComponent;
+  // The big illustration: a 1024x1024 PNG from assets/icons/weather-icons,
+  // shown by the Weather hero and the cue screens. Must be a static
+  // require() so Expo bundles the file.
+  image: ImageProps['source'];
   // Looping ambient sound from assets/sounds, or null for silence. Must be a
   // static require() so Expo bundles the file.
   sound: AudioSource | null;
@@ -66,12 +70,13 @@ export type ConditionProfile = {
 
 // The single place that defines how each condition looks, sounds, and
 // feels. To change a condition's color, swap the palette names below.
-// To change its icon, edit it in src/components/icons/condition-icons.tsx.
+// To change its icon, edit its dots in src/components/icons/condition-shapes.ts.
 export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
   'clear': {
     label: 'Clear',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: ClearIcon,
+    image: require('../../assets/icons/weather-icons/01-clear.png'),
     soundDescription: 'Soft, low, warm hum',
     vibrationDescription: 'Slow, steady taps',
     vibrationDetail: '4 soft taps',
@@ -86,6 +91,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Partly cloudy',
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: PartlyCloudyIcon,
+    image: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
     soundDescription: 'Sound coming soon',
     vibrationDescription: 'Tap-tap pairs',
     vibrationDetail: '3 pairs: medium, then light',
@@ -104,6 +110,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Overcast',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: OvercastIcon,
+    image: require('../../assets/icons/weather-icons/03-overcast.png'),
     soundDescription: 'Low, muted hum',
     vibrationDescription: 'Very slow, faint taps',
     vibrationDetail: '3 soft taps, 1 s apart',
@@ -123,6 +130,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Light rain',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: LightRainIcon,
+    image: require('../../assets/icons/weather-icons/04-light-rain.png'),
     soundDescription: 'Quiet, soft rain',
     vibrationDescription: 'Quick, uneven patter',
     vibrationDetail: '10 light taps',
@@ -139,6 +147,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Heavy rain',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: HeavyRainIcon,
+    image: require('../../assets/icons/weather-icons/05-heavy-rain.png'),
     soundDescription: 'Steady, dense rain',
     vibrationDescription: 'Rapid, strong drumming',
     vibrationDetail: '20 heavy taps in 1.4 s',
@@ -156,6 +165,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Thunderstorm',
     color: { light: palette.ink, dark: darkPalette.yellow },
     icon: ThunderstormIcon,
+    image: require('../../assets/icons/weather-icons/06-thunderstorm.png'),
     soundDescription: 'Deep, rolling thunder',
     vibrationDescription: 'Rumble, then two sharp cracks',
     vibrationDetail: '13 quick heavy taps, 2 sharp',
@@ -179,6 +189,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Snow',
     color: { light: palette.deepBlue, dark: darkPalette.iceBlue },
     icon: SnowIcon,
+    image: require('../../assets/icons/weather-icons/07-snow.png'),
     soundDescription: 'Hushed, soft texture',
     vibrationDescription: 'Slow ripples in threes',
     vibrationDetail: '2 groups of 3 soft taps',
@@ -195,6 +206,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Sleet',
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: SleetIcon,
+    image: require('../../assets/icons/weather-icons/08-sleet.png'),
     soundDescription: 'Hissing, icy rain',
     vibrationDescription: 'Irregular, sharp taps',
     vibrationDetail: '7 sharp taps',
@@ -218,6 +230,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: FogIcon,
+    image: require('../../assets/icons/weather-icons/09-fog.png'),
     soundDescription: 'Low, airy drone',
     vibrationDescription: 'Slowing, soft taps',
     vibrationDetail: '4 soft taps, further apart',
@@ -234,6 +247,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     label: 'Windy',
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: WindIcon,
+    image: require('../../assets/icons/weather-icons/10-wind.png'),
     soundDescription: 'Low, gusty wind',
     vibrationDescription: 'Swells and fades',
     vibrationDetail: '8 taps, light to heavy and back',
@@ -266,6 +280,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: ExtremeHeatIcon,
+    image: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
     soundDescription: 'Sound coming soon',
     vibrationDescription: 'Steady, warm buzz',
     vibrationDetail: '1.5 s of soft taps',
@@ -282,6 +297,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: ExtremeColdIcon,
+    image: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
     soundDescription: 'Sharp ice cracks, once a second',
     vibrationDescription: 'Shivering triplets',
     vibrationDetail: '3 quick triplets, 1 s apart',
@@ -300,6 +316,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // TODO: awaiting final color from design team.
     color: { light: palette.deepBlue, dark: darkPalette.periwinkle },
     icon: SevereAlertIcon,
+    image: require('../../assets/icons/weather-icons/13-severe-alert.png'),
     soundDescription: 'Repeating alert tone',
     vibrationDescription: 'Heavy triple pulses',
     vibrationDetail: '3 heavy triplets',

@@ -1,15 +1,18 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+import { HalftoneField } from './brand';
+
+// A slowly breathing dot field instead of a spinner (still with Reduce
+// Motion).
 export function LoadingState() {
-  const theme = useTheme();
-  const styles = createStyles(theme);
+  const styles = createStyles(useTheme());
 
   return (
     <View style={styles.container} accessible accessibilityLabel="Loading the weather">
-      <ActivityIndicator size="large" color={theme.colors.accent} />
+      <HalftoneField size={160} pattern="rings" breathing />
       <Text style={styles.message}>Checking the sky…</Text>
     </View>
   );

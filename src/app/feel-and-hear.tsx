@@ -2,9 +2,9 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CueIllustration } from '@/components/cue-illustration';
 import { CueRows } from '@/components/cue-rows';
 import { ConditionName, PlayAllButton } from '@/components/cue-screen-parts';
-import { WeatherHero } from '@/components/weather-hero';
 import { CONDITION_IDS, type ConditionId } from '@/constants/conditions';
 import { spacing, typography, type Theme } from '@/constants/theme';
 import { useCuePreview } from '@/hooks/use-cue-preview';
@@ -48,7 +48,7 @@ export default function FeelAndHearScreen() {
             <Text style={styles.caption}>Right now</Text>
             <ConditionName condition={condition} size="h1" />
           </View>
-          <WeatherHero conditions={[condition]} size={150} visible />
+          <CueIllustration condition={condition} size={150} playing={preview.playing === condition} />
         </View>
         <CueRows condition={condition} vibrationOn={preview.vibrationOn} />
         <PlayAllButton playing={preview.playing === condition} onPress={() => preview.toggle(condition)} />
