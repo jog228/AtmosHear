@@ -26,6 +26,8 @@ export const palette = {
   sunPale: '#F9D898',
   white: '#FFFFFF',
   mist: '#EDF5FD', // pale blue page background, from design/frames/
+  // Thin lines and unselected chip borders on mist. Decoration only.
+  line: '#CDD4DF',
   // TODO: awaiting final red from design team. Delete actions only: 6.5:1
   // with white text on it, 5.9:1 as text on mist.
   red: '#B3261E',
@@ -138,7 +140,7 @@ export const bedsideLightPalette: BedsidePalette = {
   pastDotScale: 1,
   domeAhead: palette.periwinkle,
   amber: palette.sun,
-  divider: '#CDD4DF',
+  divider: palette.line,
   dividerWidth: 1,
   accent: palette.deepBlue,
   onAccent: palette.white,
@@ -146,7 +148,7 @@ export const bedsideLightPalette: BedsidePalette = {
   sunHalo: [0.32, 0.18],
   // When Light is chosen for the night too.
   moon: palette.deepBlue,
-  flip: { background: palette.white, border: '#CDD4DF', borderWidth: 1.5, icon: palette.deepBlue },
+  flip: { background: palette.white, border: palette.line, borderWidth: 1.5, icon: palette.deepBlue },
   conditionIcon: palette.deepBlue,
 };
 

@@ -9,6 +9,7 @@ import type { ConditionId } from '@/constants/conditions';
 import { getTestWeatherOption } from '@/constants/test-weather';
 import { type Theme } from '@/constants/theme';
 import { testAlarmNow } from '@/features/alarms/test-alarm';
+import { resetOnboarding } from '@/features/onboarding/onboarding-storage';
 import { formatClockTime } from '@/features/preferences/opening-time';
 import { TimePickerSheet } from '@/features/preferences/time-picker-sheet';
 import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
@@ -81,6 +82,18 @@ export function DeveloperSettings() {
               description="Rings right away with the first alarm’s sound (or Morning)."
               accessibilityHint="Opens the ringing alarm screen with sound and vibration"
               onPress={testAlarmNow}
+              divider
+            />
+          )}
+          {developerMode && (
+            <ActionRow
+              label="Replay onboarding"
+              description="Shows the first-run introduction again."
+              accessibilityHint="Opens the welcome screen"
+              onPress={() => {
+                resetOnboarding();
+                router.push('/onboarding/welcome');
+              }}
               divider
             />
           )}

@@ -55,7 +55,7 @@ Two root-stack screens show and preview each condition's cues. The Sound library
 
 ## Developer mode
 
-Preferences › Developer replaces live weather with filler data for testing and presenting (no API calls), or forces one live provider (Open-Meteo or NWS, no fallback). All filler values and the list of test conditions and combinations live in `src/constants/test-weather.ts`; `src/services/providers/demo.ts` turns them into a 12-hour forecast. The same filler is the last-resort fallback when no live or saved weather exists. A "Developer mode" pill always shows on the home screen while it's on. The "Severe alert" test weather comes with a test alert over thunderstorm + heavy rain, beeping each time it's picked; "Replay alert" in the Developer section plays the beeps on demand.
+Preferences › Developer replaces live weather with filler data for testing and presenting (no API calls), or forces one live provider (Open-Meteo or NWS, no fallback). All filler values and the list of test conditions and combinations live in `src/constants/test-weather.ts`; `src/services/providers/demo.ts` turns them into a 12-hour forecast. The same filler is the last-resort fallback when no live or saved weather exists. A "Developer mode" pill always shows on the home screen while it's on. The "Severe alert" test weather comes with a test alert over thunderstorm + heavy rain, beeping each time it's picked; "Replay alert" in the Developer section plays the beeps on demand. "Replay onboarding" (also while Developer mode is on) clears `onboarding.completed` and opens `/onboarding/welcome`.
 
 ## Design direction
 
@@ -82,6 +82,14 @@ The teammate's frames in `design/frames/` (06 Weather home through 12 Preference
 ## Code organization
 
 Keep files small: screens in `src/app/`, UI in `src/components/`, API calls and data logic in `src/services/`, static mappings and theme in `src/constants/`.
+
+## Onboarding
+
+First-run introduction (Version A from the design canvas), in `src/features/onboarding/` with routes in `src/app/onboarding/` (its own stack, no tab bar).
+- **Gating:** AsyncStorage key `onboarding.completed` (`onboarding-storage.ts`). The root layout starts reading it at launch; the entry route `src/app/index.tsx` renders nothing until it's read, then sends a first launch to `/onboarding/welcome` before any tab renders. Finishing (either button on Location) or Skip (any screen) sets the key and goes to the start tab with `router.dismissTo` (it replaces onboarding on a first launch and returns to the tabs underneath on a replay). If storage can't be read, onboarding is treated as done.
+- **Layout** (`onboarding-page.tsx`): Back and Skip (44pt targets) at the top on screens 2-5; a hero; then a left-aligned block with "N of 5", the headline (800 weight, line height 0.98 × size, letter spacing -1.5), body (19pt), 5 page dots, and a 60pt navy button (radius 22, label left, arrow right). Theme tokens only (light: mist, ink, slate, deepBlue, sun, periwinkle, gray; `palette.line` #CDD4DF for unselected chip borders), so it also works in dark and high contrast. Safe areas respected; it scrolls when Dynamic Type makes it taller than the screen.
+- **Screens:** Welcome (the app icon, "Atmos / Hear", Get started; back gestures and Android back blocked). Senses (8 condition tiles plus "+6 More" via `ConditionIcon`; a tap plays the condition through `useCuePreview`, one at a time, flash-safe; the playing tile turns navy with a white icon, an amber glow ring, and a pause badge; "+6 More" opens the Sound library as a modal, `src/app/onboarding/sounds.tsx`; chips: Vibration is the Preferences Vibration switch, Sound and Light are display-only because previews always play them; previews stop on blur). Night (a bedside illustration, its own simple SVG since the dome belongs to the alarm feature; tone chips play a 3-second sample; there's no default-tone setting, so it's preview only). Name (prefilled, up to 15 characters, live greeting preview from `getGreeting`; Continue or return saves the trimmed name to `openingPreferences`). Location ("Use my location" asks through `getPlace()` and finishes either way, waiting at most 12 s; "Not now" finishes without asking, so Bethlehem applies; no notification prompt).
+- **Boundaries:** onboarding may use the condition profiles, the preview player, the theme, Preferences, and the location service, but reaches the alarm feature only through `src/features/alarms/public.ts` (`TONE_CHOICES`, `DEFAULT_TONE`, `playToneSample(tone, ms)`, `stopToneSample()`), never its internals.
 
 ## Alarms
 

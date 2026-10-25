@@ -58,6 +58,21 @@ class TonePreview {
 
 const tonePreview = new TonePreview();
 
+// A short sample of a tone (e.g. the first 3 seconds), stopping any sample
+// or preview already playing. For screens outside the alarm feature,
+// through public.ts.
+let sampleTimer: ReturnType<typeof setTimeout> | undefined;
+export function playToneSample(tone: AlarmTone, ms: number) {
+  clearTimeout(sampleTimer);
+  tonePreview.play(tone);
+  sampleTimer = setTimeout(() => tonePreview.stop(), ms);
+}
+
+export function stopToneSample() {
+  clearTimeout(sampleTimer);
+  tonePreview.stop();
+}
+
 // The preview for a screen: which tone is playing, and toggle. Stops when
 // the screen closes or the app goes to the background.
 export function useTonePreview() {

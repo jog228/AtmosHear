@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LightOverlay } from '@/components/light-overlay';
 import { AlarmHost } from '@/features/alarms/alarm-host';
 import { lockPortrait } from '@/features/alarms/bedside-orientation';
+import { loadOnboardingStatus } from '@/features/onboarding/onboarding-storage';
 import { BedsideSlotsProvider } from '@/features/alarms/bedside-slots';
 import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
 import { useBedsideWeather } from '@/hooks/use-bedside-weather';
@@ -25,6 +26,9 @@ import { registerWakeWeather } from '@/services/wake-weather';
 SplashScreen.preventAutoHideAsync();
 // Portrait everywhere; bedside mode turns to landscape while it's open.
 lockPortrait();
+// Whether onboarding is done, read now so the entry route (src/app/index.tsx)
+// knows before any tab renders.
+loadOnboardingStatus();
 
 export default function RootLayout() {
   return (
@@ -96,6 +100,9 @@ function ThemedStack() {
         <Stack.Screen name="index" options={{ headerShown: false, animation: 'none' }} />
         {/* Weather, Alarms, and Preferences tabs. */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+        {/* First-run onboarding: its own stack, no tab bar. Can't be swiped
+            away (when replayed, the tabs are underneath). */}
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
         {/* Cue screens: the native back button only (chevron), since each
             screen has its own big headline. */}
         <Stack.Screen name="sounds" options={{ title: 'Sounds', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
