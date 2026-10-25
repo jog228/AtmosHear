@@ -33,7 +33,8 @@ type Props = {
 // Bedside mode's dotted dome (design/frames/9 · Centered dome@2x.png): a
 // half circle of dots, growing slightly larger toward the right. Dots
 // already passed are dim, the rest periwinkle, the last few amber. Now is
-// a glowing amber sun in the daytime, a pale crescent moon at night; an
+// an amber sun in the daytime, a crescent moon at night, styled by the
+// palette (bedside-palette.ts); an
 // open ring marks the next alarm. Positions come from dome-position.ts.
 // Decorative and still (it moves once a minute with the clock): the
 // screen's summary says the same in words.
@@ -48,11 +49,14 @@ export function BedsideDome({ geometry, colors, scale, span, now, alarmAt }: Pro
   const dots = Array.from({ length: DOTS }, (_, i) => {
     const t = dotFraction(i, DOTS);
     const { x, y } = domePoint(t, cx, cy, radius);
-    const r = radius * (0.008 + 0.008 * t);
+    const full = radius * (0.008 + 0.008 * t);
+    const passed = !span || dotPassed(i, DOTS, f);
+    // High contrast draws passed dots smaller as well as dimmer.
+    const r = passed ? full * colors.pastDotScale : full;
     // Dots the marker's clear circle would overlap are left out, so none
     // shows up sliced at its edge.
     if (position && Math.hypot(x - position.x, y - position.y) < s(MARKER.clear) + r) return null;
-    const fill = !span || dotPassed(i, DOTS, f) ? colors.domePast : i >= DOTS - WARM_DOTS ? colors.amber : colors.domeAhead;
+    const fill = passed ? colors.domePast : i >= DOTS - WARM_DOTS ? colors.amber : colors.domeAhead;
     return <Circle key={i} cx={x} cy={y} r={r} fill={fill} />;
   });
 
@@ -70,16 +74,29 @@ export function BedsideDome({ geometry, colors, scale, span, now, alarmAt }: Pro
         <>
           <Circle cx={position.x} cy={position.y} r={s(MARKER.clear)} fill={colors.background} />
           {span.kind === 'day' ? (
+            // The sun: halos in the dark and light palettes, and an outline
+            // in light (amber alone is faint on mist) and high contrast.
             <>
-              <Circle cx={position.x} cy={position.y} r={s(MARKER.haloOuter)} fill={colors.amber} opacity={0.12} />
-              <Circle cx={position.x} cy={position.y} r={s(MARKER.haloInner)} fill={colors.amber} opacity={0.22} />
-              <Circle cx={position.x} cy={position.y} r={s(MARKER.disc)} fill={colors.amber} />
+              {colors.sunHalo && (
+                <>
+                  <Circle cx={position.x} cy={position.y} r={s(MARKER.haloOuter)} fill={colors.amber} opacity={colors.sunHalo[1]} />
+                  <Circle cx={position.x} cy={position.y} r={s(MARKER.haloInner)} fill={colors.amber} opacity={colors.sunHalo[0]} />
+                </>
+              )}
+              <Circle
+                cx={position.x}
+                cy={position.y}
+                r={s(MARKER.disc)}
+                fill={colors.amber}
+                stroke={colors.sunOutline?.color}
+                strokeWidth={colors.sunOutline?.width ?? 0}
+              />
             </>
           ) : (
-            // A crescent: a pale disc with a background-colored disc over its
+            // A crescent: a disc with a background-colored disc over its
             // upper right.
             <>
-              <Circle cx={position.x} cy={position.y} r={s(MARKER.disc)} fill={colors.brightText} />
+              <Circle cx={position.x} cy={position.y} r={s(MARKER.disc)} fill={colors.moon} />
               <Circle cx={position.x + s(5.5)} cy={position.y - s(3.5)} r={s(11)} fill={colors.background} />
             </>
           )}

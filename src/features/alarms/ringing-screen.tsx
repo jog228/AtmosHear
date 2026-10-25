@@ -9,10 +9,11 @@ import { ClockSun } from '@/components/brand';
 import { radius, spacing } from '@/constants/theme';
 import { useMinuteClock } from '@/hooks/use-minute-clock';
 
-import { useAlarmColors, type AlarmColors } from './alarm-colors';
+import { useAlarmColors, useBedsideColors, type AlarmColors } from './alarm-colors';
 import { formatTime, timeText } from './alarm-format';
 import { alarmRinger, SNOOZE_MS } from './alarm-ringer';
 import { BEDSIDE_MARGIN, sideInset } from './bedside-layout';
+import { useBedsideDaytime, useBedsideSlots } from './bedside-slots';
 
 const BUTTON_HEIGHT = 72;
 
@@ -34,11 +35,25 @@ export function RingingScreen() {
 
 function Ringing() {
   useKeepAwake();
-  const colors = useAlarmColors();
-  const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const landscape = window.width > window.height;
+  const now = useMinuteClock(true);
+  // Over bedside mode (landscape), the same palette as bedside; otherwise
+  // the Alarms tab's colors.
+  const alarmColors = useAlarmColors();
+  const bedside = useBedsideColors(useBedsideDaytime(useBedsideSlots().now(now))).colors;
+  const colors: AlarmColors = landscape
+    ? {
+        ...alarmColors,
+        background: bedside.background,
+        card: bedside.background,
+        text: bedside.brightText,
+        accent: bedside.accent,
+        onAccent: bedside.onAccent,
+      }
+    : alarmColors;
+  const styles = createStyles(colors);
   // In landscape, the same rule as bedside mode: the larger side inset on
   // both sides plus a margin, so nothing is under the Dynamic Island
   // whichever way up.
@@ -49,7 +64,6 @@ function Ringing() {
     () => alarmRinger.current(),
   );
 
-  const now = useMinuteClock(true);
   const at = new Date(ring?.at ?? now);
   const hour = at.getHours();
   const minute = at.getMinutes();

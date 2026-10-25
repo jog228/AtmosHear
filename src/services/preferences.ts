@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { DEFAULT_TEST_WEATHER, isTestWeatherId } from '@/constants/test-weather';
+import { bedsideAppearanceOrAuto, type BedsideAppearance } from '@/features/alarms/bedside-palette';
 
 export type Appearance = 'system' | 'light' | 'dark';
 
@@ -13,6 +14,9 @@ export type DevWeatherSource = 'test' | 'open-meteo' | 'nws';
 
 export type Preferences = {
   appearance: Appearance;
+  // Bedside mode's own colors: Auto (light by day, dark by night), Light, or
+  // Dark. High contrast comes only from `highContrast`.
+  bedsideAppearance: BedsideAppearance;
   temperatureUnit: TemperatureSetting;
   // Not a setting: the country of the last live location ("US"), kept so
   // 'auto' picks the right unit as soon as the app opens.
@@ -31,6 +35,7 @@ export type Preferences = {
 
 const KEYS: Partial<Record<keyof Preferences, string>> = {
   appearance: 'preferences.appearance',
+  bedsideAppearance: 'preferences.bedsideAppearance',
   temperatureUnit: 'preferences.temperatureUnit',
   locationCountry: 'preferences.locationCountry',
   highContrast: 'preferences.highContrast',
@@ -43,6 +48,7 @@ const KEYS: Partial<Record<keyof Preferences, string>> = {
 
 const DEFAULTS: Preferences = {
   appearance: 'system',
+  bedsideAppearance: 'auto',
   temperatureUnit: 'auto',
   locationCountry: null,
   highContrast: false,
@@ -62,6 +68,7 @@ export async function loadPreferences(): Promise<Preferences> {
     return {
       ...DEFAULTS,
       appearance: saved.appearance === 'light' || saved.appearance === 'dark' ? saved.appearance : DEFAULTS.appearance,
+      bedsideAppearance: bedsideAppearanceOrAuto(saved.bedsideAppearance),
       temperatureUnit:
         saved.temperatureUnit === 'fahrenheit' || saved.temperatureUnit === 'celsius'
           ? saved.temperatureUnit

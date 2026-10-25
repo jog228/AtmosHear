@@ -162,6 +162,30 @@ export function SegmentedControl<T extends string>({
   );
 }
 
+// A titled row with a segmented control under it (and an optional note),
+// e.g. Appearance › Bedside mode.
+export function SegmentedRow<T extends string>({
+  label,
+  description,
+  note,
+  divider,
+  ...control
+}: {
+  label: string;
+  description?: string;
+  note?: string;
+  divider?: boolean;
+} & Parameters<typeof SegmentedControl<T>>[0]) {
+  const styles = createStyles(useTheme());
+  return (
+    <View style={[styles.stackedRow, divider && styles.divider]}>
+      <RowText label={label} description={description} />
+      <SegmentedControl {...control} />
+      {note && <Text style={styles.description}>{note}</Text>}
+    </View>
+  );
+}
+
 // A row that opens something, with the current value as its subtitle (like
 // the frame's "Location / New York, NY"). Screen readers hear
 // "<label>, <value>, button".
@@ -337,6 +361,12 @@ function createStyles(theme: Theme) {
     segmentText: {
       ...typography.title,
       color: colors.textPrimary,
+      // Long labels ("High contrast") wrap, centered.
+      textAlign: 'center',
+    },
+    stackedRow: {
+      gap: spacing.sm,
+      paddingVertical: spacing.sm + 4,
     },
     segmentTextSelected: {
       color: colors.buttonText,

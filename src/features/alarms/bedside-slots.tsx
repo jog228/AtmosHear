@@ -1,5 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
+import type { BedsideColors } from './alarm-colors';
+import { guessDaytime, type BedsideAppearance } from './bedside-palette';
+
 // Bedside mode shows weather and the sky, but alarm code can't import
 // weather code. So the screen has slots that the root layout fills in from
 // the weather side. Empty slots: no weather column, and a plain arc instead
@@ -21,8 +24,8 @@ export type BedsideSky = {
 
 export type BedsideSlots = {
   // Draws the left column (current weather) at the screen's scale
-  // (bedside-layout.ts), or null to leave it out.
-  renderWeatherColumn: ((scale: number) => ReactNode) | null;
+  // (bedside-layout.ts) in its palette, or null to leave it out.
+  renderWeatherColumn: ((scale: number, colors: BedsideColors) => ReactNode) | null;
   // For the screen's VoiceOver summary, e.g. "54 degrees, light rain,
   // feels like 51".
   weatherSpoken: string | null;
@@ -31,9 +34,22 @@ export type BedsideSlots = {
   // Developer mode: shows a layout readout (window, insets, scale).
   // TEMPORARY, for the Dynamic Island fix.
   debug: boolean;
+  // Preferences › Appearance › Bedside mode.
+  appearance: BedsideAppearance;
+  // The time bedside shows for the real time: Developer › Simulate time
+  // while Developer mode is on, otherwise the same. Display only; alarms
+  // always ring on the real clock.
+  now: (real: number) => number;
 };
 
-const EMPTY: BedsideSlots = { renderWeatherColumn: null, weatherSpoken: null, sky: null, debug: false };
+const EMPTY: BedsideSlots = {
+  renderWeatherColumn: null,
+  weatherSpoken: null,
+  sky: null,
+  debug: false,
+  appearance: 'auto',
+  now: (real) => real,
+};
 
 const BedsideSlotsContext = createContext<BedsideSlots>(EMPTY);
 
@@ -43,4 +59,12 @@ export function BedsideSlotsProvider({ value, children }: { value: BedsideSlots;
 
 export function useBedsideSlots(): BedsideSlots {
   return useContext(BedsideSlotsContext);
+}
+
+// Whether it's daytime at `now` (the time bedside shows) for the Auto
+// palette: from the sky (sunrise to sunset), or a 7 AM to 7 PM guess
+// without one.
+export function useBedsideDaytime(now: number): boolean {
+  const sky = useBedsideSlots().sky?.(now);
+  return sky ? sky.kind === 'day' : guessDaytime(new Date(now));
 }

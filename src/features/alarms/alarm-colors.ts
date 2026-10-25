@@ -1,5 +1,17 @@
-import { bedsidePalette, darkPalette, palette, withAlpha, type ThemeName } from '@/constants/theme';
+import {
+  bedsideHighContrastPalette,
+  bedsideLightPalette,
+  bedsidePalette,
+  darkPalette,
+  palette,
+  withAlpha,
+  type BedsidePalette,
+  type ThemeName,
+} from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+import { pickBedsidePalette, type BedsidePaletteName } from './bedside-palette';
+import { useBedsideSlots } from './bedside-slots';
 
 // The Alarms tab's colors, built only from the app's base palette (no
 // weather condition colors). Picked by the current theme name, so light,
@@ -96,7 +108,22 @@ export function useAlarmColors(): AlarmColors {
   return COLORS[useTheme().name];
 }
 
-// Bedside mode's colors: the same dark, dim set in every theme (contrast
-// notes are with bedsidePalette in src/constants/theme.ts).
-export const BEDSIDE_COLORS = bedsidePalette;
-export type BedsideColors = typeof bedsidePalette;
+// Bedside mode's colors (and the ringing screen's over it): light, dark, or
+// high contrast, picked by bedside-palette.ts from the Bedside mode setting
+// (through the slots), the app-wide High contrast switch, and whether it's
+// daytime. Contrast notes are with the palettes in
+// src/constants/theme.ts.
+export type BedsideColors = BedsidePalette;
+
+export const BEDSIDE_PALETTES: Record<BedsidePaletteName, BedsideColors> = {
+  light: bedsideLightPalette,
+  dark: bedsidePalette,
+  highContrast: bedsideHighContrastPalette,
+};
+
+export function useBedsideColors(isDaytime: boolean): { name: BedsidePaletteName; colors: BedsideColors } {
+  const appHighContrast = useTheme().name === 'highContrast';
+  const { appearance } = useBedsideSlots();
+  const name = pickBedsidePalette({ setting: appearance, appHighContrast, isDaytime });
+  return { name, colors: BEDSIDE_PALETTES[name] };
+}

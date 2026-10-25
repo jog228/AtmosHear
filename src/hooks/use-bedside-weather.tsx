@@ -5,6 +5,7 @@ import { BedsideWeatherColumn } from '@/components/bedside-weather-column';
 import { describeConditions } from '@/constants/condition-profiles';
 import { useBedsideOpen } from '@/features/alarms/bedside-screen';
 import type { BedsideSky, BedsideSlots } from '@/features/alarms/bedside-slots';
+import { useOpeningPreferences } from '@/features/preferences/use-opening-preferences';
 import { loadLatestWeather, weatherNow } from '@/services/latest-weather';
 import { FALLBACK_PLACE, lastKnownCoordinates } from '@/services/location';
 import { formatDuration, formatTimeOfDay, sunSpan } from '@/services/sun-times';
@@ -26,6 +27,8 @@ export function useBedsideWeather(): BedsideSlots {
   const { preferences } = usePreferences();
   const temperature = useTemperature();
   const uses24Hour = useCalendars()[0]?.uses24hourClock ?? false;
+  // Developer › Simulate time (only set while Developer mode is on).
+  const { simulatedTime, now: openingNow } = useOpeningPreferences();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
@@ -44,8 +47,13 @@ export function useBedsideWeather(): BedsideSlots {
   }, [open, preferences]);
 
   const weather = open ? loaded?.weather : null;
-  const debug = preferences.developerMode;
-  if (!loaded || !weather) return { renderWeatherColumn: null, weatherSpoken: null, sky: null, debug };
+  // Always filled, with or without weather.
+  const always = {
+    debug: preferences.developerMode,
+    appearance: preferences.bedsideAppearance,
+    now: (real: number) => (simulatedTime ? openingNow().getTime() : real),
+  };
+  if (!loaded || !weather) return { renderWeatherColumn: null, weatherSpoken: null, sky: null, ...always };
 
   const current = weatherNow(weather);
   const condition = describeConditions(current.conditions);
@@ -70,9 +78,10 @@ export function useBedsideWeather(): BedsideSlots {
   };
 
   return {
-    renderWeatherColumn: (scale) => (
+    renderWeatherColumn: (scale, colors) => (
       <BedsideWeatherColumn
         scale={scale}
+        colors={colors}
         conditions={current.conditions}
         temperature={degrees(current.temperature)}
         condition={condition}
@@ -88,6 +97,6 @@ export function useBedsideWeather(): BedsideSlots {
       .filter(Boolean)
       .join(', '),
     sky,
-    debug,
+    ...always,
   };
 }

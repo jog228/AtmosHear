@@ -10,7 +10,11 @@ import type { WeatherData } from '@/services/weather-data';
 
 import { SoundsIcon } from './icons';
 import { MuteButton } from './mute-button';
-import { SQUARE_BUTTON_ICON, SQUARE_BUTTON_SIZE, SquareButton, squareButtonIconColor } from './square-button';
+import { SQUARE_BUTTON_SIZE, SquareButton, squareButtonIconColor } from './square-button';
+
+// The All sounds icon, a little larger than the mute icon: its ring has
+// small dots that need the room.
+const SOUNDS_ICON_SIZE = 28;
 
 type Props = {
   weather: WeatherData;
@@ -57,7 +61,7 @@ export function ScreenHeader({ weather, developerMode, location, locationNote, g
             accessibilityLabel="All sounds"
             accessibilityHint="Hear and feel every weather condition"
           >
-            <SoundsIcon size={SQUARE_BUTTON_ICON} color={squareButtonIconColor(theme, 'card')} />
+            <SoundsIcon size={SOUNDS_ICON_SIZE} color={squareButtonIconColor(theme, 'card')} />
           </SquareButton>
           <MuteButton />
         </View>

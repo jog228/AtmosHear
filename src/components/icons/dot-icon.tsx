@@ -11,14 +11,18 @@ export type IconProps = {
 
 export type DotIconComponent = ComponentType<IconProps>;
 
+// The usual grid. An icon that reaches its edges (the All sounds ring)
+// can pass a slightly larger one, so no dot is clipped.
+const VIEW_BOX = '0 0 24 24';
+
 // Draws a list of dots on a 24x24 grid. Decorative: hidden from screen
 // readers, since the condition or label is always shown as text.
-export function DotIcon({ dots, size, color }: IconProps & { dots: Dot[] }) {
+export function DotIcon({ dots, size, color, viewBox = VIEW_BOX }: IconProps & { dots: Dot[]; viewBox?: string }) {
   return (
     <Svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox={viewBox}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
@@ -36,9 +40,9 @@ export function DotIcon({ dots, size, color }: IconProps & { dots: Dot[] }) {
 }
 
 // Makes a named icon component from a fixed list of dots.
-export function dotIcon(name: string, dots: Dot[]): DotIconComponent {
+export function dotIcon(name: string, dots: Dot[], viewBox?: string): DotIconComponent {
   function Icon(props: IconProps) {
-    return <DotIcon dots={dots} {...props} />;
+    return <DotIcon dots={dots} viewBox={viewBox} {...props} />;
   }
   Icon.displayName = name;
   return Icon;
