@@ -3,16 +3,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { radius, spacing, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { HalftoneField } from './brand';
+import { RippleLoader } from './brand';
 
-// A slowly breathing dot field instead of a spinner (still with Reduce
-// Motion).
+// A ripple of dots instead of a spinner (still with Reduce Motion).
 export function LoadingState() {
   const styles = createStyles(useTheme());
 
   return (
     <View style={styles.container} accessible accessibilityLabel="Loading the weather">
-      <HalftoneField size={160} pattern="rings" breathing />
+      <RippleLoader size={160} />
       <Text style={styles.message}>Checking the sky…</Text>
     </View>
   );

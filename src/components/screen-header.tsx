@@ -2,15 +2,19 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { mostSignificant } from '@/constants/condition-priority';
+import { sortByPriority } from '@/constants/condition-priority';
 import { radius, spacing, typography, type Theme } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatSavedTime } from '@/services/time';
 import type { WeatherData } from '@/services/weather-data';
 
-import { FeelAndHearIcon } from './icons';
+import { SoundsIcon } from './icons';
 import { MuteButton } from './mute-button';
-import { SQUARE_BUTTON_ICON, SQUARE_BUTTON_SIZE, SquareButton, squareButtonIconColor } from './square-button';
+import { SQUARE_BUTTON_SIZE, SquareButton, squareButtonIconColor } from './square-button';
+
+// The All sounds icon, a little larger than the mute icon: its ring has
+// small dots that need the room.
+const SOUNDS_ICON_SIZE = 28;
 
 type Props = {
   weather: WeatherData;
@@ -36,28 +40,28 @@ export function ScreenHeader({ weather, developerMode, location, locationNote, g
   return (
     <View style={styles.container}>
       {/* Top row: location on the left, vertically centered on the
-          buttons; Feel & hear (white) and the quick mute (deepBlue) as
+          buttons; All sounds (white) and the quick mute (deepBlue) as
           rounded square buttons on the right. */}
       <View style={styles.topRow}>
         <View style={styles.location}>{location}</View>
         <View style={styles.controls}>
-          {/* Opens the cues for the current most significant condition.
-              router.push rather than <Link asChild>: Link drops a
-              pressed-state style function, which left this button without
-              its square. */}
+          {/* Opens the Sound library, with the current conditions under
+              "Right now". router.push rather than <Link asChild>: Link
+              drops a pressed-state style function, which left this button
+              without its square. */}
           <SquareButton
             variant="card"
             onPress={() =>
               router.push({
-                pathname: '/feel-and-hear',
-                params: { condition: mostSignificant(weather.current.conditions) },
+                pathname: '/sounds',
+                params: { current: sortByPriority(weather.current.conditions).join(',') },
               })
             }
             accessibilityRole="button"
-            accessibilityLabel="Feel and hear"
-            accessibilityHint="Shows and plays the sound, vibration, and light for this weather"
+            accessibilityLabel="All sounds"
+            accessibilityHint="Hear and feel every weather condition"
           >
-            <FeelAndHearIcon size={SQUARE_BUTTON_ICON} color={squareButtonIconColor(theme, 'card')} />
+            <SoundsIcon size={SOUNDS_ICON_SIZE} color={squareButtonIconColor(theme, 'card')} />
           </SquareButton>
           <MuteButton />
         </View>

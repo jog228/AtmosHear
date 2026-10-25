@@ -3,7 +3,7 @@ import { fetchJson } from '../http';
 import type { Place } from '../location';
 import { formatHour } from '../time';
 import type { DailyForecast, HourlyForecast, ProviderWeather, WeatherData } from '../weather-data';
-import { conditionFromWmoCode } from '../wmo-condition';
+import { conditionsFromWmoCode } from '../wmo-condition';
 
 type OpenMeteoResponse = {
   utc_offset_seconds: number;
@@ -41,7 +41,7 @@ type OpenMeteoResponse = {
 };
 
 const HOURS_AHEAD = 12;
-const DAYS = 3;
+const DAYS = 5;
 
 // Primary source. Free, no API key, worldwide: https://open-meteo.com/en/docs
 export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
@@ -59,7 +59,7 @@ export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
     'timeformat=unixtime',
     // The first hourly entry is the current hour, followed by the next 12.
     `forecast_hours=${HOURS_AHEAD + 1}`,
-    // Today and the next two days.
+    // Today and the next four days.
     `forecast_days=${DAYS}`,
   ].join('&');
 
@@ -71,7 +71,7 @@ export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
     time: seconds * 1000,
     // Shift into the location's time zone, then read the hour as UTC.
     hourLabel: formatHour(new Date((seconds + utc_offset_seconds) * 1000).getUTCHours()),
-    conditions: addOverlays([conditionFromWmoCode(hourly.weather_code[i])], {
+    conditions: addOverlays(conditionsFromWmoCode(hourly.weather_code[i]), {
       windSpeed: hourly.wind_speed_10m[i],
       feelsLike: hourly.apparent_temperature[i],
     }),
@@ -85,7 +85,7 @@ export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
     locationName: place.name,
     updatedAt: Date.now(),
     current: {
-      conditions: addOverlays([conditionFromWmoCode(current.weather_code)], {
+      conditions: addOverlays(conditionsFromWmoCode(current.weather_code), {
         windSpeed: current.wind_speed_10m,
         feelsLike: current.apparent_temperature,
       }),
@@ -117,7 +117,7 @@ function toDays(daily: OpenMeteoResponse['daily'] | undefined, utcOffsetSeconds:
       {
         // Shift into the location's time zone, then read the date as UTC.
         date: new Date((seconds + utcOffsetSeconds) * 1000).toISOString().slice(0, 10),
-        conditions: [conditionFromWmoCode(code)],
+        conditions: conditionsFromWmoCode(code),
         high: Math.round(high),
         low: Math.round(low),
       },

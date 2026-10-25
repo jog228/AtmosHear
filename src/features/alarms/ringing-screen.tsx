@@ -2,35 +2,68 @@ import { useCalendars } from 'expo-localization';
 import { router } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useSyncExternalStore } from 'react';
-import { AccessibilityInfo, BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AccessibilityInfo, BackHandler, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ClockSun } from '@/components/brand';
 import { radius, spacing } from '@/constants/theme';
 import { useMinuteClock } from '@/hooks/use-minute-clock';
 
-import { useAlarmColors, type AlarmColors } from './alarm-colors';
+import { useAlarmColors, useBedsideColors, type AlarmColors } from './alarm-colors';
 import { formatTime, timeText } from './alarm-format';
 import { alarmRinger, SNOOZE_MS } from './alarm-ringer';
+import { BEDSIDE_MARGIN, sideInset } from './bedside-layout';
+import { useBedsideDaytime, useBedsideSlots } from './bedside-slots';
 
 const BUTTON_HEIGHT = 72;
 
 // Full screen while an alarm rings (route /alarm-ringing, opened by
 // AlarmHost): the time, the label, and big Snooze and Stop buttons. Keeps
 // the screen awake. Closes itself when the ring ends (Stop, Snooze, or the
-// 10-minute auto-stop). Can't be swiped away.
+// 10-minute auto-stop). Can't be swiped away. Over bedside mode it's
+// landscape: time and label on the left, the buttons side by side on the
+// right (and back to bedside, the same way up, after). Like bedside mode,
+// it's a fullScreenModal with its own SafeAreaProvider, since the app's root
+// one can keep portrait insets after a rotation.
 export function RingingScreen() {
+  return (
+    <SafeAreaProvider>
+      <Ringing />
+    </SafeAreaProvider>
+  );
+}
+
+function Ringing() {
   useKeepAwake();
-  const colors = useAlarmColors();
-  const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
+  const landscape = window.width > window.height;
+  const now = useMinuteClock(true);
+  // Over bedside mode (landscape), the same palette as bedside; otherwise
+  // the Alarms tab's colors.
+  const alarmColors = useAlarmColors();
+  const bedside = useBedsideColors(useBedsideDaytime(useBedsideSlots().now(now))).colors;
+  const colors: AlarmColors = landscape
+    ? {
+        ...alarmColors,
+        background: bedside.background,
+        card: bedside.background,
+        text: bedside.brightText,
+        accent: bedside.accent,
+        onAccent: bedside.onAccent,
+      }
+    : alarmColors;
+  const styles = createStyles(colors);
+  // In landscape, the same rule as bedside mode: the larger side inset on
+  // both sides plus a margin, so nothing is under the Dynamic Island
+  // whichever way up.
+  const side = sideInset(window.width, window.height, insets) + BEDSIDE_MARGIN;
   const uses24Hour = useCalendars()[0]?.uses24hourClock ?? false;
   const ring = useSyncExternalStore(
     (listener) => alarmRinger.subscribe(listener),
     () => alarmRinger.current(),
   );
 
-  const now = useMinuteClock(true);
   const at = new Date(ring?.at ?? now);
   const hour = at.getHours();
   const minute = at.getMinutes();
@@ -60,9 +93,24 @@ export function RingingScreen() {
   const snoozeUntil = timeText(...hourMinute(now + SNOOZE_MS), uses24Hour);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.lg }]}>
-      <View style={styles.top} accessible accessibilityLabel={`Alarm, ${ring?.label ?? ''}, ${spokenTime}`}>
-        <ClockSun size={120} hour={hour} minute={minute} />
+    <View
+      style={[
+        styles.screen,
+        landscape && styles.screenLandscape,
+        {
+          paddingTop: insets.top + (landscape ? BEDSIDE_MARGIN : spacing.xl),
+          paddingBottom: insets.bottom + (landscape ? BEDSIDE_MARGIN : spacing.lg),
+          paddingLeft: landscape ? side : insets.left + spacing.md,
+          paddingRight: landscape ? side : insets.right + spacing.md,
+        },
+      ]}
+    >
+      <View
+        style={[styles.top, landscape && styles.topLandscape]}
+        accessible
+        accessibilityLabel={`Alarm, ${ring?.label ?? ''}, ${spokenTime}`}
+      >
+        {!landscape && <ClockSun size={120} hour={hour} minute={minute} />}
         <View style={styles.timeLine}>
           <Text style={styles.time} maxFontSizeMultiplier={1.3}>
             {time}
@@ -73,14 +121,14 @@ export function RingingScreen() {
             </Text>
           )}
         </View>
-        <Text style={styles.label} numberOfLines={2}>
+        <Text style={[styles.label, landscape && styles.labelLandscape]} numberOfLines={2}>
           {ring?.label}
         </Text>
       </View>
 
-      <View style={styles.buttons}>
+      <View style={[styles.buttons, landscape && styles.buttonsLandscape]}>
         <Pressable
-          style={({ pressed }) => [styles.button, styles.snooze, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.button, landscape && styles.buttonLandscape, styles.snooze, pressed && styles.pressed]}
           onPress={() => {
             alarmRinger.snooze();
             AccessibilityInfo.announceForAccessibility(`Snoozed until ${snoozeUntil}`);
@@ -92,7 +140,7 @@ export function RingingScreen() {
           <Text style={[styles.buttonText, styles.snoozeText]}>Snooze 9 min</Text>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.button, styles.stop, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.button, landscape && styles.buttonLandscape, styles.stop, pressed && styles.pressed]}
           onPress={() => alarmRinger.stop()}
           accessibilityRole="button"
           accessibilityLabel="Stop alarm"
@@ -114,12 +162,22 @@ function createStyles(colors: AlarmColors) {
     screen: {
       flex: 1,
       backgroundColor: colors.background,
-      paddingHorizontal: spacing.md,
       justifyContent: 'space-between',
+    },
+    // Landscape (over bedside mode): two halves side by side.
+    screenLandscape: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.lg,
     },
     top: {
       alignItems: 'center',
       gap: spacing.md,
+    },
+    topLandscape: {
+      flex: 1,
+      alignItems: 'flex-start',
+      gap: spacing.xs,
     },
     timeLine: {
       flexDirection: 'row',
@@ -142,8 +200,15 @@ function createStyles(colors: AlarmColors) {
       color: colors.text,
       textAlign: 'center',
     },
+    labelLandscape: {
+      textAlign: 'left',
+    },
     buttons: {
       gap: spacing.md,
+    },
+    buttonsLandscape: {
+      flex: 1,
+      flexDirection: 'row',
     },
     button: {
       minHeight: BUTTON_HEIGHT,
@@ -151,6 +216,11 @@ function createStyles(colors: AlarmColors) {
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
+    },
+    // Side by side, sharing the width; still 72pt tall (64pt minimum).
+    buttonLandscape: {
+      flex: 1,
+      paddingHorizontal: spacing.sm,
     },
     snooze: {
       backgroundColor: colors.card,

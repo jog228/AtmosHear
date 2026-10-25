@@ -6,6 +6,7 @@ import {
   ExtremeColdIcon,
   ExtremeHeatIcon,
   FogIcon,
+  HailIcon,
   HeavyRainIcon,
   LightRainIcon,
   OvercastIcon,
@@ -42,17 +43,23 @@ export type ConditionProfile = {
   // Optional loudness correction for a file that's louder than the others
   // (0-1, default 1). Multiplies the ambient volume.
   soundVolume?: number;
+  // The sound file's integrated loudness (BS.1770, LUFS), as measured. Used
+  // to balance the weather under an alarm tone (src/services/wake-weather.ts).
+  // Every condition with a sound needs it.
+  lufs?: number;
   // For background sounds like wind: when another condition's sound plays
   // too, this one drops to this share of its solo level (0-1) so the main
   // condition stays in front. Alone, it plays at full level.
   supportingVolume?: number;
   // Per-condition overrides of supportingVolume, e.g. quieter under snow.
-  // With several other sounds, the lowest applies.
+  // Also works without supportingVolume, for a main sound that only steps
+  // back under specific conditions (thunderstorm under hail). With several
+  // other sounds, the lowest applies.
   supportingVolumeWith?: Partial<Record<ConditionId, number>>;
   // Vibration: timed taps (src/constants/haptics.ts). Patterns differ
   // mainly by rhythm. Played once, never looped.
   haptic: HapticPattern;
-  // Cue screen copy (Sound library, Feel & hear, condition detail). These
+  // Cue screen copy (Sound library, condition detail). These
   // must describe what actually plays: update them with the sound file or
   // the haptic pattern.
   soundDescription: string;
@@ -86,6 +93,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // Slow, steady.
     haptic: taps('soft', [0, 600, 1200, 1800]),
     // The loudness reference (-27.3 LUFS).
+    lufs: -27.3,
     sound: require('../../assets/sounds/new-clear.m4a'),
   },
   'partly-cloudy': {
@@ -93,7 +101,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: PartlyCloudyIcon,
     image: require('../../assets/icons/weather-icons/02-partly-cloudy.png'),
-    soundDescription: 'Sound coming soon',
+    // TODO: confirm with teammate (written from measurements, not listening).
+    soundDescription: 'Gentle, steady background',
     vibrationDescription: 'Tap-tap pairs',
     vibrationDetail: '3 pairs: medium, then light',
     light: breathe('amber', { peak: 0.35 }),
@@ -104,8 +113,12 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
       ...taps('medium', [0, 700, 1400]),
       ...taps('light', [150, 850, 1550]),
     ],
-    // TODO: awaiting sound from teammate.
-    sound: null,
+    // A steady background sound, a little softer than clear (-28.0 LUFS).
+    lufs: -28.0,
+    sound: require('../../assets/sounds/new-partly-cloudy.m4a'),
+    // A supporting layer like overcast: under wind, extreme heat, or extreme
+    // cold it drops to 60% so the more significant sound stays in front.
+    supportingVolume: 0.6,
   },
   'overcast': {
     label: 'Overcast',
@@ -122,6 +135,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: taps('soft', [0, 1000, 2000]),
     // A low, muted hum, intentionally softer (-29.1 LUFS vs clear's -27.3).
     // Don't normalize it up.
+    lufs: -29.1,
     sound: require('../../assets/sounds/overcast.m4a'),
     // Overcast is a supporting layer: its low end would muddy light rain at
     // full level, so it drops to 60% under other sounds.
@@ -142,6 +156,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: taps('light', [0, 110, 260, 350, 500, 620, 760, 850, 1000, 1130]),
     // Intentionally a step softer than heavy rain (-33.5 LUFS vs heavy
     // rain's -24.3). Don't normalize it.
+    lufs: -33.5,
     sound: require('../../assets/sounds/new-light-rain.m4a'),
   },
   'heavy-rain': {
@@ -159,6 +174,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: tapsEvery('heavy', 70, 0, 1400),
     // Exported at -24.3 LUFS, between clear (-27.3) and thunderstorm
     // (-21.2), so no correction.
+    lufs: -24.3,
     sound: require('../../assets/sounds/new-heavy-rain.m4a'),
   },
   'thunderstorm': {
@@ -183,7 +199,12 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: [...tapsEvery('heavy', 40, 0, 500), ...taps('rigid', [1200, 2000])],
     // Intentionally louder to feel intense (-21.2 LUFS vs clear's -27.3).
     // Don't normalize it down.
+    lufs: -21.2,
     sound: require('../../assets/sounds/thunderstorm.m4a'),
+    // Its steady bed is as bright as hail and 6 LU louder, so it would bury
+    // all but the biggest hailstones. Under hail it drops to 50% (-6 dB):
+    // about as loud as hail overall, with the hits on top.
+    supportingVolumeWith: { hail: 0.5 },
   },
   'snow': {
     label: 'Snow',
@@ -200,6 +221,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     haptic: taps('soft', [0, 250, 500, 1100, 1350, 1600]),
     // Intentionally a bit softer to feel hushed (-28.3 LUFS vs clear's
     // -27.3). Don't normalize it up.
+    lufs: -28.3,
     sound: require('../../assets/sounds/new-snow.m4a'),
   },
   'sleet': {
@@ -222,14 +244,61 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // Irregular and sharp.
     haptic: taps('rigid', [0, 90, 340, 400, 720, 1010, 1080]),
     // Exported to match clear (-27.3 LUFS), so no correction.
+    lufs: -27.3,
     sound: require('../../assets/sounds/new-sleet.m4a'),
+  },
+  'hail': {
+    label: 'Hail',
+    // TODO: confirm with design team.
+    color: { light: palette.slate, dark: darkPalette.iceBlue },
+    icon: HailIcon,
+    image: require('../../assets/icons/weather-icons/14-hail.png'),
+    // TODO: confirm with teammate (written from measurements, not listening).
+    soundDescription: 'Scattered hailstone hits, building from silence',
+    vibrationDescription: 'Hard hits in uneven clusters',
+    vibrationDetail: '14 heavy and sharp hits in 5 clusters',
+    // Quick white flicks at uneven gaps, never more than 3 in a second.
+    light: [
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+      hold('white', 0, 200),
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+      hold('white', 0, 150),
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+      hold('white', 0, 550),
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+      hold('white', 0, 150),
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+      hold('white', 0, 550),
+      { color: 'white', opacity: 0.6, ms: 50 },
+      { color: 'white', opacity: 0, ms: 150 },
+    ],
+    lightDescription: 'White sparkle flicks',
+    // TODO: confirm with design team.
+    contrastPair: { fg: 'iceBlue', bg: 'slate' },
+    // Hard, uneven clusters of heavy and sharp hits over 2.5 s: heavier
+    // and longer than sleet's light sharp taps, and no steady rumble like
+    // thunderstorm.
+    haptic: [
+      ...taps('heavy', [0, 160, 600, 1050, 1190, 1750, 2300, 2480]),
+      ...taps('rigid', [70, 520, 1110, 1300, 1830, 2360]),
+    ],
+    // Builds from silence over about 2 s, then about 36 separate hits.
+    // Matched to clear (-27.3 LUFS), so no correction.
+    lufs: -27.3,
+    sound: require('../../assets/sounds/new-hail.m4a'),
   },
   'fog': {
     label: 'Fog',
     color: { light: palette.gray, dark: darkPalette.gray },
     icon: FogIcon,
     image: require('../../assets/icons/weather-icons/09-fog.png'),
-    soundDescription: 'Low, airy drone',
+    // TODO: confirm with teammate (written from measurements, not listening).
+    soundDescription: 'Deep, low swells',
     vibrationDescription: 'Slowing, soft taps',
     vibrationDetail: '4 soft taps, further apart',
     light: breathe('white', { periodMs: 6000, peak: 0.5, times: 1 }),
@@ -237,9 +306,10 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     contrastPair: { fg: 'ink', bg: 'mist' },
     // A slowing wave.
     haptic: taps('soft', [0, 800, 1700, 2700]),
-    // A low, airy drone, meant to sit soft. Measures -27.3 LUFS (same as
-    // clear), so no correction. Don't normalize it up.
-    sound: require('../../assets/sounds/fog.m4a'),
+    // Two low swells with a near-silent dip at about 6 s. Matched to clear
+    // (-27.3 LUFS), so no correction.
+    lufs: -27.3,
+    sound: require('../../assets/sounds/new-fog.m4a'),
   },
   'wind': {
     label: 'Windy',
@@ -264,6 +334,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
       ...taps('medium', [200, 300, 500]),
       ...taps('heavy', [400]),
     ],
+    lufs: -30.4,
     sound: require('../../assets/sounds/new-wind.m4a'),
     // Gusty recording at -30.4 LUFS (3.1 LU under clear), so no correction.
     // Wind is a supporting layer: half its solo level under other sounds.
@@ -279,7 +350,8 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     color: { light: palette.sun, dark: darkPalette.yellow },
     icon: ExtremeHeatIcon,
     image: require('../../assets/icons/weather-icons/11-extreme-heat.png'),
-    soundDescription: 'Sound coming soon',
+    // TODO: confirm with teammate (written from measurements, not listening).
+    soundDescription: 'High, steady hiss that swells and fades',
     vibrationDescription: 'Steady, warm buzz',
     vibrationDetail: '1.5 s of soft taps',
     light: breathe('amber', { periodMs: 3000, peak: 0.6 }),
@@ -288,6 +360,7 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     // Steady and warm.
     haptic: tapsEvery('soft', 50, 0, 1500),
     // Matched to clear (-27.3 LUFS).
+    lufs: -27.3,
     sound: require('../../assets/sounds/new-extreme-heat.m4a'),
   },
   'extreme-cold': {
@@ -296,18 +369,22 @@ export const conditionProfiles: Record<ConditionId, ConditionProfile> = {
     color: { light: palette.periwinkle, dark: darkPalette.periwinkle },
     icon: ExtremeColdIcon,
     image: require('../../assets/icons/weather-icons/12-extreme-cold.png'),
-    soundDescription: 'Sharp ice cracks, once a second',
+    // TODO: confirm with teammate (written from measurements, not listening).
+    soundDescription: 'Sharp ice cracks, about every 1.2 s',
     vibrationDescription: 'Shivering triplets',
-    vibrationDetail: '3 quick triplets, 1 s apart',
-    // In time with the ice cracks.
+    vibrationDetail: '3 quick triplets, on the first 3 ice cracks',
+    // Timed to the old 4-second file's once-a-second cracks; the new file's
+    // cracks come about every 1.17 s, starting at 1.34 s.
     light: breathe('iceBlue', { periodMs: 1000, peak: 0.35, times: 4 }),
     lightDescription: 'Ice blue, pulse each second',
     contrastPair: { fg: 'iceBlue', bg: 'navy' },
-    // Shivering triplets, in time with the ice-crack sound.
-    haptic: taps('light', [0, 60, 120, 1000, 1060, 1120, 2000, 2060, 2120]),
-    // A sharp ice crack once per second, so the 4-second loop must stay
-    // exactly 4.000 s. Measures -28.0 LUFS; don't normalize it.
-    sound: require('../../assets/sounds/extreme-cold.m4a'),
+    // Shivering triplets on the first three ice cracks (about 1.34, 2.5, and
+    // 3.7 s into the sound).
+    haptic: taps('light', [1340, 1400, 1460, 2500, 2560, 2620, 3700, 3760, 3820]),
+    // A 10-second loop with a loud ice crack about every 1.17 s. Measures
+    // -28.0 LUFS; don't normalize it.
+    lufs: -28.0,
+    sound: require('../../assets/sounds/new-extreme-cold.m4a'),
   },
   'severe-alert': {
     label: 'Severe weather alert',
@@ -345,8 +422,8 @@ export function describeConditions(ids: ConditionId[]): string {
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }
 
-// Development checks: every light cue is flash-safe, and every contrast
-// pair passes WCAG AA for text.
+// Development checks: every light cue is flash-safe, every contrast pair
+// passes WCAG AA for text, and every sound has its loudness.
 if (__DEV__) {
   for (const [id, profile] of Object.entries(conditionProfiles)) {
     if (maxFlashesPerSecond(profile.light) > MAX_FLASHES_PER_SECOND) {
@@ -354,5 +431,6 @@ if (__DEV__) {
     }
     const { fg, bg } = profile.contrastPair;
     if (contrastRatio(cueColors[fg], cueColors[bg]) < 4.5) console.error(`${id}: contrast pair is under 4.5:1`);
+    if (profile.sound && profile.lufs === undefined) console.warn(`${id}: has a sound but no lufs`);
   }
 }

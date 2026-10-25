@@ -5,6 +5,8 @@ import type { ConditionId } from './conditions';
 // Reorder this list to change which condition wins.
 export const CONDITION_PRIORITY: ConditionId[] = [
   'severe-alert',
+  // Above thunderstorm, so thunderstorm + hail shows the hail icon.
+  'hail',
   'thunderstorm',
   'heavy-rain',
   'snow',

@@ -26,6 +26,8 @@ export const palette = {
   sunPale: '#F9D898',
   white: '#FFFFFF',
   mist: '#EDF5FD', // pale blue page background, from design/frames/
+  // Thin lines and unselected chip borders on mist. Decoration only.
+  line: '#CDD4DF',
   // TODO: awaiting final red from design team. Delete actions only: 6.5:1
   // with white text on it, 5.9:1 as text on mist.
   red: '#B3261E',
@@ -50,6 +52,131 @@ export const darkPalette = {
   // TODO: awaiting final red from design team. Delete actions only, also
   // in high contrast: 7.1:1 as text on navy, 7.6:1 with ink text on it.
   red: '#FF7B72',
+};
+
+// Bedside mode (design/frames/9 · Centered dome@2x.png and the "Bedside in
+// each app theme" mockups). Which palette shows is decided in
+// src/features/alarms/bedside-palette.ts: high contrast, else dark, else
+// light in the daytime and dark at night. All three have the same keys.
+export type BedsidePalette = {
+  background: string;
+  mainText: string;
+  brightText: string;
+  mutedText: string;
+  // Switched-off alarms.
+  offText: string;
+  // Off alarms' times are also struck through (high contrast).
+  strikeOff: boolean;
+  // Text that's amber in the dark ("Next · Weekdays", the sunrise label).
+  warmText: string;
+  warmWeight: '400' | '700';
+  domePast: string;
+  // Passed dots' size, relative to the others.
+  pastDotScale: number;
+  domeAhead: string;
+  // The dome's warm end dots (decoration, never text).
+  amber: string;
+  divider: string;
+  dividerWidth: number;
+  // The ringing screen's Stop button (and Snooze's border) over bedside.
+  accent: string;
+  onAccent: string;
+  // Now on the dome: the sun's outline and halo opacities (inner, outer),
+  // and the moon's color.
+  sunOutline: { color: string; width: number } | null;
+  sunHalo: [number, number] | null;
+  moon: string;
+  flip: { background: string; border: string; borderWidth: number; icon: string };
+  // The weather column's condition icon.
+  conditionIcon: string;
+};
+
+// Dark: dim, for night and the dark theme. Contrast on the background
+// (#091141): brightText 15.3:1, warmText (amber) 11.0:1, mainText 9.3:1,
+// mutedText 5.9:1, offText 4.9:1, so every text color passes AA; navy on
+// the amber Stop button 11.0:1. domePast (2.0:1) and divider (1.4:1) are
+// decoration only, never text; the dome's meaning is also in text
+// ("7 hr 39 min until sunrise").
+export const bedsidePalette: BedsidePalette = {
+  background: darkPalette.navy,
+  mainText: darkPalette.gray,
+  brightText: darkPalette.iceBlue,
+  mutedText: '#8C92B0',
+  offText: '#7E84A6',
+  strikeOff: false,
+  warmText: palette.sun,
+  warmWeight: '400',
+  domePast: '#3A4580',
+  pastDotScale: 1,
+  domeAhead: darkPalette.periwinkle,
+  amber: palette.sun,
+  divider: '#1E2A6B',
+  dividerWidth: 1,
+  accent: palette.sun,
+  onAccent: darkPalette.navy,
+  sunOutline: null,
+  sunHalo: [0.22, 0.12],
+  moon: darkPalette.iceBlue,
+  flip: { background: 'transparent', border: '#3A4580', borderWidth: 1.5, icon: darkPalette.gray },
+  conditionIcon: darkPalette.periwinkle,
+};
+
+// Light: Auto in the daytime, or Light chosen (day and night). Contrast on
+// mist: mainText and brightText (ink) 17.4:1, warmText (deepBlue, bold)
+// 10.9:1, mutedText and offText (slate) 8.0:1 ("Off" carries the meaning);
+// white on the deepBlue Stop button 12.0:1. Amber (1.5:1) is never text
+// here: only the end dots and the sun, which gets a deepBlue outline.
+// domePast (1.6:1), domeAhead (3.7:1), and divider (1.4:1) are decoration.
+export const bedsideLightPalette: BedsidePalette = {
+  background: palette.mist,
+  mainText: palette.ink,
+  brightText: palette.ink,
+  mutedText: palette.slate,
+  offText: palette.slate,
+  strikeOff: false,
+  warmText: palette.deepBlue,
+  warmWeight: '700',
+  domePast: '#BFC4CC',
+  pastDotScale: 1,
+  domeAhead: palette.periwinkle,
+  amber: palette.sun,
+  divider: palette.line,
+  dividerWidth: 1,
+  accent: palette.deepBlue,
+  onAccent: palette.white,
+  sunOutline: { color: palette.deepBlue, width: 2 },
+  sunHalo: [0.32, 0.18],
+  // When Light is chosen for the night too.
+  moon: palette.deepBlue,
+  flip: { background: palette.white, border: palette.line, borderWidth: 1.5, icon: palette.deepBlue },
+  conditionIcon: palette.deepBlue,
+};
+
+// High contrast: solid colors, thick lines. Contrast on ink: every text
+// color white 19.1:1, warmText (sun) 11.7:1; ink on the sun Stop button
+// 11.7:1. Off alarms are white too, with the time struck through.
+export const bedsideHighContrastPalette: BedsidePalette = {
+  background: palette.ink,
+  mainText: palette.white,
+  brightText: palette.white,
+  mutedText: palette.white,
+  offText: palette.white,
+  strikeOff: true,
+  warmText: palette.sun,
+  warmWeight: '400',
+  domePast: palette.white,
+  pastDotScale: 0.6,
+  domeAhead: palette.sun,
+  amber: palette.sun,
+  divider: palette.white,
+  dividerWidth: 2,
+  accent: palette.sun,
+  onAccent: palette.ink,
+  sunOutline: { color: palette.white, width: 2.5 },
+  sunHalo: null,
+  moon: palette.white,
+  flip: { background: 'transparent', border: palette.white, borderWidth: 2, icon: palette.white },
+  conditionIcon: palette.sun,
 };
 
 // Named colors for the cue screens: light cue colors and each condition's
@@ -101,6 +228,10 @@ export type ThemeColors = {
   switchTrackOff: string;
   switchBorderOff: string;
   switchThumbOff: string;
+  // The sun card's daylight bar: the dots still to come. The dots already
+  // passed are `accent`, and the two pass 3:1 (checked in
+  // src/components/daylight-bar.tsx).
+  progressTrack: string;
 };
 
 // Frosted glass cards over soft condition-colored blobs. Unused for now:
@@ -130,12 +261,12 @@ export type Glass = {
 };
 
 // The dotted brand illustrations (src/components/brand/: the clock-face
-// sun, the halftone field, the dot rings) and the sun card's arc.
+// sun, the halftone field, the dot rings) and the sun card's "now" dot.
 // Decorative: the same information is always in text.
 export type IllustrationColors = {
-  // Halftone and ring dots, and the sun card's arc.
+  // Halftone and ring dots.
   dots: string;
-  // The sun's edge.
+  // The sun's edge, and the "now" dot on the sun card's daylight bar.
   sun: string;
   // The clock face inside the sun.
   sunFace: string;
@@ -187,6 +318,8 @@ export const lightTheme: Theme = {
     switchTrackOff: palette.white,
     switchBorderOff: palette.gray,
     switchThumbOff: palette.gray,
+    // 3.9:1 with deepBlue; 3.0:1 on the white card.
+    progressTrack: palette.gray,
   },
   illustration: {
     dots: palette.periwinkle,
@@ -231,6 +364,8 @@ export const darkTheme: Theme = {
     switchTrackOff: darkPalette.navy,
     switchBorderOff: darkPalette.gray,
     switchThumbOff: darkPalette.gray,
+    // A fill, never text. 3.3:1 with periwinkle.
+    progressTrack: darkPalette.royalBlue,
   },
   // A navy cloud would vanish on navy, so clouds are ice blue.
   illustration: {
@@ -274,6 +409,8 @@ export const highContrastTheme: Theme = {
     switchTrackOff: palette.ink,
     switchBorderOff: palette.white,
     switchThumbOff: palette.white,
+    // 5.3:1 with sun. (White would be only 1.6:1 with sun.)
+    progressTrack: palette.slate,
   },
   illustration: {
     dots: palette.white,

@@ -11,7 +11,7 @@ import { SQUARE_BUTTON_ICON, SquareButton, squareButtonIconColor } from './squar
 // Quick mute for checking the app in public. Flips the same "Ambient sound"
 // setting as Preferences, so both always match. Sound only: vibration and
 // severe alert beeps keep working.
-// The deepBlue square beside Feel & hear on the Weather screen.
+// The deepBlue square beside All sounds on the Weather screen.
 export function MuteButton() {
   const theme = useTheme();
   const { preferences, updatePreferences } = usePreferences();

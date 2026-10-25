@@ -73,7 +73,8 @@ export type WeatherData = {
   updatedAt: number;
   current: CurrentWeather;
   hourly: HourlyForecast[];
-  // Today and the next two days. Empty if unavailable.
+  // Today and the next four days (fewer if the source ran short, or from a
+  // save made before the 5-day forecast). Empty if unavailable.
   daily: DailyForecast[];
   // Missing when the source doesn't give them (NWS); the app then
   // calculates them from the location (src/services/sun-times.ts).

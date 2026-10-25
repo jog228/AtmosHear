@@ -1,12 +1,13 @@
 import { StyleSheet, Text } from 'react-native';
 
 import { typography, type Theme } from '@/constants/theme';
+import { BEDSIDE_APPEARANCES, type BedsideAppearance } from '@/features/alarms/bedside-palette';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useTheme, useThemeSettings } from '@/hooks/use-theme';
 import { useTemperature } from '@/hooks/use-temperature';
 import type { Appearance, TemperatureSetting } from '@/services/preferences';
 
-import { RowGroup, SegmentedControl, SettingsSection, SwitchRow } from './settings-rows';
+import { RowGroup, SegmentedControl, SegmentedRow, SettingsSection, SwitchRow } from './settings-rows';
 
 // The app-wide sections of the Preferences tab (formerly the Settings
 // screen). They live here, not in src/features/preferences, because they
@@ -18,6 +19,19 @@ const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
+const BEDSIDE_LABELS: Record<BedsideAppearance, string> = {
+  auto: 'Auto',
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
+// VoiceOver: "Bedside mode appearance, Auto".
+const BEDSIDE_OPTIONS = BEDSIDE_APPEARANCES.map((value) => ({
+  value,
+  label: BEDSIDE_LABELS[value],
+  spoken: `Bedside mode appearance, ${BEDSIDE_LABELS[value]}`,
+}));
+
 const TEMPERATURE_OPTIONS: { value: TemperatureSetting; label: string; spoken: string }[] = [
   { value: 'auto', label: 'Auto', spoken: 'Automatic' },
   { value: 'fahrenheit', label: '°F', spoken: 'Fahrenheit' },
@@ -26,6 +40,7 @@ const TEMPERATURE_OPTIONS: { value: TemperatureSetting; label: string; spoken: s
 
 export function AppearanceSettings() {
   const { theme, appearance, setAppearance, highContrast } = useThemeSettings();
+  const { preferences, updatePreferences } = usePreferences();
   const styles = createStyles(theme);
   return (
     <SettingsSection title="Appearance">
@@ -37,6 +52,17 @@ export function AppearanceSettings() {
         accessibilityHint="System matches your phone’s light or dark mode"
       />
       {highContrast && <Text style={styles.note}>High contrast is on, so it’s used instead of this setting.</Text>}
+      {/* Bedside mode's own colors (src/features/alarms/bedside-palette.ts). */}
+      <SegmentedRow
+        label="Bedside mode"
+        description="Auto follows sunrise and sunset."
+        options={BEDSIDE_OPTIONS}
+        selected={preferences.bedsideAppearance}
+        onSelect={(value) => updatePreferences({ bedsideAppearance: value })}
+        accessibilityLabel="Bedside mode appearance"
+        note={highContrast ? 'High contrast is on, so bedside mode uses it too.' : undefined}
+        divider
+      />
     </SettingsSection>
   );
 }

@@ -16,12 +16,33 @@ export function resolveSunTimes(now: number, provided: SunTimes | undefined, lat
   return { sunrise: today.sunrise, sunset: today.sunset, tomorrowSunrise: tomorrow.sunrise };
 }
 
+// The stretch of sky `now` is in: daylight (sunrise to sunset) or night
+// (sunset to the next sunrise, including after midnight). Null where the
+// sun doesn't rise or set.
+export type SunSpan = { kind: 'day' | 'night'; start: number; end: number };
+
+export function sunSpan(now: number, provided: SunTimes | undefined, latitude: number, longitude: number): SunSpan | null {
+  const times = resolveSunTimes(now, provided, latitude, longitude);
+  if (!times) return null;
+  if (now >= times.sunset) return { kind: 'night', start: times.sunset, end: times.tomorrowSunrise };
+  if (now >= times.sunrise) return { kind: 'day', start: times.sunrise, end: times.sunset };
+  // Before sunrise: the night began at yesterday's sunset.
+  const yesterday = resolveSunTimes(now - DAY_MS, undefined, latitude, longitude);
+  return yesterday ? { kind: 'night', start: yesterday.sunset, end: times.sunrise } : null;
+}
+
 export type SunPhase = { kind: 'day'; daylightLeftMs: number } | { kind: 'night'; untilSunriseMs: number };
 
 export function sunPhase(now: number, times: SunTimes): SunPhase {
   if (now < times.sunrise) return { kind: 'night', untilSunriseMs: times.sunrise - now };
   if (now >= times.sunset) return { kind: 'night', untilSunriseMs: times.tomorrowSunrise - now };
   return { kind: 'day', daylightLeftMs: times.sunset - now };
+}
+
+// How much of today's daylight has passed, 0 (sunrise or earlier) to 1
+// (sunset or later).
+export function daylightPassed(now: number, times: SunTimes): number {
+  return Math.min(1, Math.max(0, (now - times.sunrise) / (times.sunset - times.sunrise)));
 }
 
 // 11_400_000 -> { short: "3 hr 10 min", spoken: "3 hours 10 minutes" }.

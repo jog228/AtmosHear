@@ -25,7 +25,7 @@ export default function HomeScreen() {
   const { state, reload, developerMode } = useWeather();
   // Weather sound and vibration stop on the other tabs (the sound fades
   // out, then back in on return). A screen opened on top keeps the tab it
-  // came from: Feel & hear (from here) keeps them, the test weather sheet
+  // came from: the Sound library (from here) keeps them, the test weather sheet
   // (from Preferences) stays quiet.
   const pathname = usePathname();
   const [tab, setTab] = useState(pathname);

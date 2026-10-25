@@ -1,26 +1,26 @@
 import { dotIcon } from './dot-icon';
-import type { Dot } from './shapes';
+import { ring, type Dot } from './shapes';
 
 // Dotted icons for buttons, in the halftone style of design/frames/.
 
-// Feel & hear: a dot with two arcs of dots on each side, like sound and
-// vibration spreading out from it.
-export const FeelAndHearIcon = dotIcon('FeelAndHearIcon', [
-  [12, 12, 2.6],
-  ...arcs(5.6, [-35, 0, 35], 1.15),
-  ...arcs(9.6, [-44, -22, 0, 22, 44], 0.95),
-]);
+// All sounds (the Sound library button), design option "5 · Play"
+// (reference: design/icons/all-sounds-icon.png): a ring of 16 small dots
+// around a play triangle of 10 bigger dots in 4 columns pointing right.
+// The ring reaches the grid's edge, so it's drawn on a viewBox one unit
+// larger on each side.
+export const SoundsIcon = dotIcon(
+  'SoundsIcon',
+  [...ring(12, 12, 9.5, 16, 0.95), ...playTriangle()],
+  '-1 -1 26 26',
+);
 
-// Dots at the given angles (0 = straight right) on a circle around the
-// center, mirrored to the left side.
-function arcs(radius: number, angles: number[], r: number): Dot[] {
-  return angles.flatMap((deg): Dot[] => {
-    const angle = (deg * Math.PI) / 180;
-    const dx = Math.round(radius * Math.cos(angle) * 100) / 100;
-    const dy = Math.round(radius * Math.sin(angle) * 100) / 100;
-    return [
-      [12 + dx, 12 + dy, r],
-      [12 - dx, 12 + dy, r],
-    ];
-  });
+// Columns of dots from left to right, each one dot shorter.
+function playTriangle(): Dot[] {
+  const columns: [number, number[]][] = [
+    [9.4, [8.2, 10.7, 13.2, 15.7]],
+    [11.8, [9.4, 11.9, 14.4]],
+    [14.2, [10.7, 13.2]],
+    [16.4, [11.9]],
+  ];
+  return columns.flatMap(([x, ys]) => ys.map((y): Dot => [x, y, 1.2]));
 }

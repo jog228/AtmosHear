@@ -1,4 +1,4 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 
 import { useStartTabOnReturn } from '@/features/preferences/use-start-tab-on-return';
 import { useTheme } from '@/hooks/use-theme';

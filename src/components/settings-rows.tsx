@@ -154,10 +154,43 @@ export function SegmentedControl<T extends string>({
             accessibilityLabel={option.spoken ?? option.label}
             accessibilityHint={accessibilityHint}
           >
-            <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>
+            {/* One line each: shrinks a little rather than wrap when four
+                options share the row. */}
+            <Text
+              style={[styles.segmentText, isSelected && styles.segmentTextSelected]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {option.label}
+            </Text>
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+// A titled row with a segmented control under it (and an optional note),
+// e.g. Appearance › Bedside mode.
+export function SegmentedRow<T extends string>({
+  label,
+  description,
+  note,
+  divider,
+  ...control
+}: {
+  label: string;
+  description?: string;
+  note?: string;
+  divider?: boolean;
+} & Parameters<typeof SegmentedControl<T>>[0]) {
+  const styles = createStyles(useTheme());
+  return (
+    <View style={[styles.stackedRow, divider && styles.divider]}>
+      <RowText label={label} description={description} />
+      <SegmentedControl {...control} />
+      {note && <Text style={styles.description}>{note}</Text>}
     </View>
   );
 }
@@ -337,6 +370,11 @@ function createStyles(theme: Theme) {
     segmentText: {
       ...typography.title,
       color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    stackedRow: {
+      gap: spacing.sm,
+      paddingVertical: spacing.sm + 4,
     },
     segmentTextSelected: {
       color: colors.buttonText,

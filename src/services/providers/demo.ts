@@ -41,7 +41,7 @@ export function getDemoWeather(
   });
 
   // Today's range from the same daily curve as the hourly temperatures.
-  // The next two days settle into the forecast's last weather, a couple of
+  // The next four days settle into the forecast's last weather, a couple of
   // degrees apart so the rows differ. No alert in a day's conditions.
   const high = Math.round(option.temperature + option.dailySwing * (1 - daily(nowHour)));
   const low = Math.round(option.temperature - option.dailySwing * (1 + daily(nowHour)));
@@ -50,6 +50,8 @@ export function getDemoWeather(
     { conditions: option.conditions, shift: 0 },
     { conditions: later, shift: -2 },
     { conditions: later, shift: 1 },
+    { conditions: later, shift: -1 },
+    { conditions: later, shift: 2 },
   ].map(({ conditions, shift }, i) => ({
     date: localDateString(new Date(now + i * 24 * HOUR_MS)),
     conditions: conditions.filter((id) => id !== 'severe-alert'),

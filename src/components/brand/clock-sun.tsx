@@ -7,10 +7,6 @@ import { clockSunShape, SUN_CENTER, SUN_VIEW } from './geometry';
 
 type Props = {
   size: number;
-  // An edge in this color instead of amber, `outlineWidth` points thick,
-  // so a small sun stands out (amber is 1.6:1 on white).
-  outline?: string;
-  outlineWidth?: number;
   // An outline in the dot color with no amber face, e.g. for a
   // switched-off alarm. (Fading the amber turns it muddy on navy.)
   dimmed?: boolean;
@@ -25,15 +21,15 @@ type Props = {
 // whatever time it shows is also in text, so it's hidden from screen
 // readers. Still, even with Reduce Motion off: only the hands move, once a
 // minute.
-export function ClockSun({ size, outline, outlineWidth = 2, dimmed, ...time }: Props) {
+export function ClockSun({ size, dimmed, ...time }: Props) {
   const { illustration } = useTheme();
   const now = new Date(useMinuteClock(!!time.live));
   const hour = time.live ? now.getHours() : time.hour;
   const minute = time.live ? now.getMinutes() : time.minute;
-  const shape = clockSunShape(size, hour, minute, outline ? outlineWidth : undefined);
+  const shape = clockSunShape(size, hour, minute);
   const c = SUN_CENTER;
   const face = dimmed ? 'none' : illustration.sunFace;
-  const edge = dimmed ? illustration.dots : (outline ?? illustration.sun);
+  const edge = dimmed ? illustration.dots : illustration.sun;
   const hands = dimmed ? illustration.dots : illustration.hands;
 
   return (

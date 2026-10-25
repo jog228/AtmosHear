@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ClockSun, HalftoneField } from '@/components/brand';
+import { ClockSun } from '@/components/brand';
 import { radius, spacing } from '@/constants/theme';
 
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
@@ -102,18 +102,11 @@ export function AlarmsScreen() {
 
       {/* iOS keeps the list clear of the tab bar. */}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        {/* The title, with a clock-face sun showing the time over a dot
-            field (decorative), like the Feel & hear heading. */}
-        <View style={styles.header}>
-          <Text style={styles.title} accessibilityRole="header">
-            Alarms
-          </Text>
-          {alarms.length > 0 && (
-            <HalftoneField size={HEADER_SIZE} pattern="rings" hole>
-              <ClockSun size={HEADER_SIZE / 3} live />
-            </HalftoneField>
-          )}
-        </View>
+        {/* Just the title: each alarm row has its own ClockSun, and the
+            empty state has a large one. */}
+        <Text style={styles.title} accessibilityRole="header">
+          Alarms
+        </Text>
 
         {permission === 'denied' && (
           <View style={styles.notice} accessible accessibilityRole="text">
@@ -195,7 +188,6 @@ export function AlarmsScreen() {
   );
 }
 
-const HEADER_SIZE = 132;
 
 function createStyles(colors: AlarmColors) {
   return StyleSheet.create({
@@ -229,15 +221,7 @@ function createStyles(colors: AlarmColors) {
       paddingBottom: spacing.xl,
       gap: spacing.md,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: spacing.sm,
-      minHeight: HEADER_SIZE,
-    },
     title: {
-      flexShrink: 1,
       fontSize: 34,
       fontWeight: '700',
       color: colors.text,

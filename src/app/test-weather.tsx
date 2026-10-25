@@ -46,7 +46,7 @@ export default function TestWeatherSheet() {
                   accessibilityState={{ checked: selected }}
                   accessibilityLabel={option.label}
                 >
-                  <WeatherIcon conditions={option.conditions} size={32} />
+                  <WeatherIcon conditions={option.conditions} />
                   <Text style={styles.label}>{option.label}</Text>
                   {selected && (
                     <SymbolView

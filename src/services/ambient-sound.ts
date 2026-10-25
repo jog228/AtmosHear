@@ -16,6 +16,10 @@ const VOLUME_CHANGE_MS = 500; // screen reader turned on/off
 const REPLAY_DIP_MS = 200; // quick dip before a replay restarts the sound
 const DUCK_MS = 200; // severe alert starting
 const UNDUCK_MS = 1000; // severe alert finished
+// Wake mode (the weather under a ringing alarm): full player volume, so the
+// alarm tone is turned down to it rather than the other way round.
+export const WAKE_VOLUME = 1;
+const WAKE_FADE_IN_MS = 4000;
 
 export type AmbientState = {
   // Conditions to play, most significant first. Each one with a sound
@@ -42,8 +46,10 @@ class AmbientSound {
   // What the Weather screen asked for, kept while a preview plays so it can
   // come back after.
   private requested: AmbientState = { conditions: [], enabled: true, foreground: true, volume: AMBIENT_VOLUME };
-  // A cue preview (Sound library, Feel & hear) replaces the Weather loop.
+  // A cue preview (Sound library, condition detail) replaces the Weather loop.
   private previewing: ConditionId | null = null;
+  // Wake mode: the weather playing under (and just after) an alarm.
+  private waking: ConditionId[] | null = null;
 
   // Plays even with the ringer switch on silent: only the volume buttons
   // and the in-app toggle control it. Other apps' audio keeps playing.
@@ -74,14 +80,32 @@ class AmbientSound {
     this.apply();
   }
 
-  private apply() {
-    const preview = this.previewing;
-    const state = preview ? { ...this.requested, conditions: [preview], enabled: true } : this.requested;
-    // Layers to keep loaded while paused: the Weather screen's.
-    this.applyState(state, preview ? this.requested.conditions : []);
+  // Wake mode: plays these conditions' loops under a ringing alarm, at
+  // WAKE_VOLUME, fading in over 4 s. Like a preview, it plays on any tab,
+  // in Silent mode, and with "Ambient sound" off (VoiceOver's lower volume
+  // and alert ducking don't apply either). A preview the user starts still
+  // takes over. Pass null to end it: everything moves to what the Weather
+  // screen wants (usually silence, or its normal loop) over `fadeMs`.
+  setWake(conditions: ConditionId[] | null, { fadeMs }: { fadeMs?: number } = {}) {
+    this.waking = conditions;
+    this.apply(conditions ? WAKE_FADE_IN_MS : fadeMs);
   }
 
-  private applyState({ conditions, enabled, foreground, volume }: AmbientState, keep: ConditionId[]) {
+  private apply(fadeMs?: number) {
+    const preview = this.previewing;
+    const wake = this.waking;
+    const state = preview
+      ? { ...this.requested, conditions: [preview], enabled: true }
+      : wake
+        ? { ...this.requested, conditions: wake, enabled: true, volume: WAKE_VOLUME }
+        : this.requested;
+    // Layers to keep loaded while paused: the Weather screen's.
+    this.applyState(state, preview || wake ? this.requested.conditions : [], fadeMs);
+  }
+
+  // `fadeMs`, if given, replaces every fade length below (wake mode's own
+  // fade in and fade out).
+  private applyState({ conditions, enabled, foreground, volume }: AmbientState, keep: ConditionId[], fadeMs?: number) {
     // Conditions without a sound file are skipped.
     const wanted = enabled && foreground ? conditions.filter((id) => conditionProfiles[id].sound) : [];
     // Adding, removing, or swapping layers while sound is playing crossfades
@@ -97,9 +121,9 @@ class AmbientSound {
     for (const [id, layer] of this.layers) {
       if (wanted.includes(id)) continue;
       const conditionEnded = !conditions.includes(id) && !keep.includes(id);
-      const fadeMs = !foreground ? 0 : !enabled ? TURN_OFF_MS : CROSSFADE_MS;
-      const curve = fadeMs === CROSSFADE_MS ? 'equalPower' : 'linear';
-      this.fade(layer, 0, fadeMs, curve, () => {
+      const outMs = !foreground ? 0 : (fadeMs ?? (!enabled ? TURN_OFF_MS : CROSSFADE_MS));
+      const curve = outMs === CROSSFADE_MS ? 'equalPower' : 'linear';
+      this.fade(layer, 0, outMs, curve, () => {
         layer.player.pause();
         // Keep the player for a quick resume unless its condition is gone.
         if (conditionEnded) this.remove(id);
@@ -122,8 +146,8 @@ class AmbientSound {
       const startingFromSilence = !layer.player.playing;
       if (startingFromSilence) layer.player.play();
       const fadeIn = turningOn ? TURN_ON_MS : FADE_IN_MS;
-      const fadeMs = crossfading ? CROSSFADE_MS : startingFromSilence ? fadeIn : VOLUME_CHANGE_MS;
-      this.fade(layer, this.targetVolume(id), fadeMs, crossfading ? 'equalPower' : 'linear');
+      const inMs = fadeMs ?? (crossfading ? CROSSFADE_MS : startingFromSilence ? fadeIn : VOLUME_CHANGE_MS);
+      this.fade(layer, this.targetVolume(id), inMs, crossfading && fadeMs === undefined ? 'equalPower' : 'linear');
     }
   }
 
@@ -154,7 +178,8 @@ class AmbientSound {
   }
 
   private targetVolume(id: ConditionId) {
-    return layerVolume(id, this.volume, this.playing) * (this.ducked ? ALERT_DUCK_VOLUME : 1);
+    const ducked = this.ducked && !this.waking;
+    return layerVolume(id, this.volume, this.playing) * (ducked ? ALERT_DUCK_VOLUME : 1);
   }
 
   // Stops and frees everything (e.g. when the screen unmounts).
@@ -200,6 +225,13 @@ class AmbientSound {
   }
 }
 
+// The player volume each condition with a sound gets when they play
+// together at `volume`, e.g. to work out how loud a mix is.
+export function layerVolumes(conditions: ConditionId[], volume: number): { id: ConditionId; volume: number }[] {
+  const layers = conditions.filter((id) => conditionProfiles[id].sound);
+  return layers.map((id) => ({ id, volume: layerVolume(id, volume, layers) }));
+}
+
 // A layer's volume: the ambient volume, corrected for files that are louder
 // than the rest, times its share of the mix.
 function layerVolume(id: ConditionId, volume: number, layers: ConditionId[]) {
@@ -211,12 +243,13 @@ function layerVolume(id: ConditionId, volume: number, layers: ConditionId[]) {
 }
 
 // 1 for a main layer. Supporting layers (like wind) get their
-// supportingVolume when any other sound is playing.
+// supportingVolume when any other sound is playing, and any layer gets its
+// supportingVolumeWith level under the conditions it names.
 function mixWeight(id: ConditionId, layers: ConditionId[]) {
   const { supportingVolume, supportingVolumeWith = {} } = conditionProfiles[id];
   const others = layers.filter((layer) => layer !== id);
-  if (supportingVolume === undefined || others.length === 0) return 1;
-  return Math.min(...others.map((other) => supportingVolumeWith[other] ?? supportingVolume));
+  if (others.length === 0) return 1;
+  return Math.min(...others.map((other) => supportingVolumeWith[other] ?? supportingVolume ?? 1));
 }
 
 export const ambientSound = new AmbientSound();

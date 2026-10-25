@@ -1,5 +1,6 @@
 import { dotIcon } from './dot-icon';
-import { ring, row, type Dot } from './shapes';
+import { type Dot } from './shapes';
+import { sunriseDots, sunsetDots } from './sun-shapes';
 
 // Dotted icons for the detail cards and the sun card, matching
 // design/frames/06_Weather_home.png. Wind, rain, UV, and snow reuse the
@@ -19,15 +20,10 @@ export const FeelsLikeIcon = dotIcon('FeelsLikeIcon', [
 // A leaf outline with a center vein and a stem.
 export const AirQualityIcon = dotIcon('AirQualityIcon', leaf());
 
-// A half sun on the horizon with a chevron pointing up (sunrise) or down.
-export const SunriseIcon = dotIcon('SunriseIcon', [...horizonSun(), [9.8, 5.2, 0.75], [12, 3.2, 0.75], [14.2, 5.2, 0.75]]);
-export const SunsetIcon = dotIcon('SunsetIcon', [...horizonSun(), [9.8, 3.2, 0.75], [12, 5.2, 0.75], [14.2, 3.2, 0.75]]);
-
-function horizonSun(): Dot[] {
-  // Seven rays fanned across the top half.
-  const rays = [-180, -150, -120, -90, -60, -30, 0].map((deg) => ring(12, 16, 6.8, 1, 0.85, deg)[0]);
-  return [...row(3, 21, 18.6, 8, 0.7), [12, 16, 2.7], ...rays];
-}
+// A half sun on the horizon with an arrow pointing up (sunrise) or down
+// (sunset); the dots are in sun-shapes.ts.
+export const SunriseIcon = dotIcon('SunriseIcon', sunriseDots);
+export const SunsetIcon = dotIcon('SunsetIcon', sunsetDots);
 
 // Dots along both edges of a leaf pointing up and to the right.
 function leaf(): Dot[] {

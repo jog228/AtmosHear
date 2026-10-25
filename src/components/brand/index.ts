@@ -2,6 +2,5 @@
 // weather or alarm code), so every feature can use them.
 export { ClockSun } from './clock-sun';
 export { DotRings, type PulseSource } from './dot-rings';
-export type { FieldPattern } from './geometry';
-export { HalftoneField } from './halftone-field';
+export { RippleLoader } from './ripple-loader';
 export { useBreathing } from './use-breathing';

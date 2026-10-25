@@ -5,12 +5,12 @@ import { spacing, typography, type Theme } from '@/constants/theme';
 import { useMinuteClock } from '@/hooks/use-minute-clock';
 import { useTheme } from '@/hooks/use-theme';
 import type { Place } from '@/services/location';
-import { formatDuration, formatTimeOfDay, resolveSunTimes, sunPhase } from '@/services/sun-times';
+import { daylightPassed, formatDuration, formatTimeOfDay, resolveSunTimes, sunPhase } from '@/services/sun-times';
 import type { WeatherData } from '@/services/weather-data';
 
+import { DaylightBar } from './daylight-bar';
 import { GlassCard } from './glass-card';
 import { SunriseIcon, SunsetIcon, type DotIconComponent } from './icons';
-import { SunArc } from './sun-arc';
 
 type Props = {
   weather: WeatherData;
@@ -21,7 +21,7 @@ type Props = {
 };
 
 // Sunrise and sunset, with how much daylight is left (or, at night, how
-// long until sunrise), and a dotted arc showing where the sun is now.
+// long until sunrise) and a dotted bar of how much has passed.
 export function SunCard({ weather, place, visible }: Props) {
   const theme = useTheme();
   const styles = createStyles(theme);
@@ -44,24 +44,25 @@ export function SunCard({ weather, place, visible }: Props) {
   const sunset = formatTimeOfDay(times.sunset, uses24Hour);
   const duration = formatDuration(phase.kind === 'day' ? phase.daylightLeftMs : phase.untilSunriseMs);
   const status = phase.kind === 'day' ? `${duration.short} of daylight left` : `Sunrise in ${duration.short}`;
-  const progress = phase.kind === 'day' ? (now - times.sunrise) / (times.sunset - times.sunrise) : null;
   const spokenStatus =
     phase.kind === 'day' ? `${duration.spoken} of daylight left` : `sunrise in ${duration.spoken}`;
+  // Empty before sunrise and full after sunset, matching the bar.
+  const passed = daylightPassed(now, times);
 
   return (
     <GlassCard
       style={styles.card}
       accessible
-      accessibilityLabel={`Sunrise ${sunrise}, sunset ${sunset}, ${spokenStatus}`}
+      accessibilityLabel={`Sunrise ${sunrise}, sunset ${sunset}, ${spokenStatus}, ${Math.round(passed * 100)} percent of daylight passed`}
     >
       <View style={styles.times}>
         <SunTime label="Sunrise" time={sunrise} icon={SunriseIcon} color={theme.colors.accent} theme={theme} />
         <SunTime label="Sunset" time={sunset} icon={SunsetIcon} color={theme.colors.accent} theme={theme} alignRight />
       </View>
 
-      <SunArc progress={progress} now={now} />
-
       <Text style={styles.status}>{status}</Text>
+
+      <DaylightBar passed={passed} showNow={phase.kind === 'day'} />
     </GlassCard>
   );
 }
@@ -97,7 +98,7 @@ function createStyles(theme: Theme) {
   return StyleSheet.create({
     card: {
       padding: spacing.md + spacing.xs,
-      gap: spacing.md,
+      gap: spacing.sm + spacing.xs,
     },
     times: {
       flexDirection: 'row',

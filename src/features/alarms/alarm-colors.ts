@@ -1,5 +1,19 @@
-import { darkPalette, palette, withAlpha, type ThemeName } from '@/constants/theme';
+import {
+  bedsideHighContrastPalette,
+  bedsideLightPalette,
+  bedsidePalette,
+  darkPalette,
+  palette,
+  withAlpha,
+  type BedsidePalette,
+  type ThemeName,
+} from '@/constants/theme';
+import { useColorScheme } from 'react-native';
+
 import { useTheme } from '@/hooks/use-theme';
+
+import { pickBedsidePalette, type BedsidePaletteName } from './bedside-palette';
+import { useBedsideSlots } from './bedside-slots';
 
 // The Alarms tab's colors, built only from the app's base palette (no
 // weather condition colors). Picked by the current theme name, so light,
@@ -94,4 +108,28 @@ const COLORS: Record<ThemeName, AlarmColors> = {
 
 export function useAlarmColors(): AlarmColors {
   return COLORS[useTheme().name];
+}
+
+// Bedside mode's colors (and the ringing screen's over it): light, dark, or
+// high contrast, picked by bedside-palette.ts from the Bedside mode setting
+// (through the slots), the app-wide High contrast switch, whether it's
+// daytime (Auto), and the phone's light or dark mode (System). Contrast
+// notes are with the palettes in src/constants/theme.ts.
+export type BedsideColors = BedsidePalette;
+
+export const BEDSIDE_PALETTES: Record<BedsidePaletteName, BedsideColors> = {
+  light: bedsideLightPalette,
+  dark: bedsidePalette,
+  highContrast: bedsideHighContrastPalette,
+};
+
+export function useBedsideColors(isDaytime: boolean): { name: BedsidePaletteName; colors: BedsideColors } {
+  const appHighContrast = useTheme().name === 'highContrast';
+  const { appearance } = useBedsideSlots();
+  // Live: changes when the phone switches modes. While the app's own
+  // Appearance is Light or Dark, use-theme.tsx overrides the color scheme
+  // so native controls match, and this reports that choice instead.
+  const systemDark = useColorScheme() === 'dark';
+  const name = pickBedsidePalette({ setting: appearance, appHighContrast, isDaytime, systemDark });
+  return { name, colors: BEDSIDE_PALETTES[name] };
 }

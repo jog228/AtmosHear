@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { describeConditions } from '@/constants/condition-profiles';
+import { mostSignificant } from '@/constants/condition-priority';
+import { conditionProfiles, describeConditions } from '@/constants/condition-profiles';
 import { spacing, typography, type Theme } from '@/constants/theme';
 import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,8 +14,10 @@ import { WeatherIcon } from './weather-icon';
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// Today and the next two days: icon, high, and low. A headline above a flat
-// card with divided rows, like design/frames/07_Weather_scrolled.png.
+// Today and the next four days: day, icon, condition, high, and low. A
+// headline above a flat card with divided rows, like
+// design/frames/07_Weather_scrolled.png. The headline counts the days
+// actually shown, since NWS or an older save can have fewer.
 export function DailyForecast({ days }: { days: Day[] }) {
   const styles = createStyles(useTheme());
   const temperature = useTemperature();
@@ -29,18 +32,24 @@ export function DailyForecast({ days }: { days: Day[] }) {
       <GlassCard style={styles.panel}>
         {days.map((day, i) => {
           const { short, full } = dayNames(day.date, today);
+          const high = temperature.value(day.high);
+          const low = temperature.value(day.low);
           return (
             <View
               key={day.date}
               style={[styles.row, i > 0 && styles.divider]}
               accessible
-              accessibilityLabel={`${full}, ${describeConditions(day.conditions)}, high ${temperature.value(day.high)} degrees, low ${temperature.value(day.low)} degrees`}
+              // "Saturday, light rain, high 68, low 57."
+              accessibilityLabel={`${full}, ${describeConditions(day.conditions).toLowerCase()}, high ${high}, low ${low}`}
             >
               <Text style={styles.day}>{short}</Text>
-              <WeatherIcon conditions={day.conditions} size={40} />
+              <WeatherIcon conditions={day.conditions} />
+              <Text style={styles.condition} numberOfLines={2}>
+                {conditionProfiles[mostSignificant(day.conditions)].label}
+              </Text>
               <View style={styles.temperatures}>
-                <Text style={styles.high}>H {temperature.value(day.high)}°</Text>
-                <Text style={styles.low}>L {temperature.value(day.low)}°</Text>
+                <Text style={styles.high}>{high}°</Text>
+                <Text style={styles.low}>{low}°</Text>
               </View>
             </View>
           );
@@ -86,11 +95,14 @@ function createStyles(theme: Theme) {
       width: 72,
       color: theme.colors.textPrimary,
     },
-    temperatures: {
+    condition: {
+      ...typography.body,
       flex: 1,
+      color: theme.colors.textSecondary,
+    },
+    temperatures: {
       flexDirection: 'row',
-      justifyContent: 'flex-end',
-      gap: spacing.md,
+      gap: spacing.sm + spacing.xs,
     },
     high: {
       ...typography.title,

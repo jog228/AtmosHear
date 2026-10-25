@@ -41,6 +41,20 @@ export async function getPlace(): Promise<Place> {
   }
 }
 
+// The phone's last known position, without asking for permission or
+// waiting for GPS (works offline), or Bethlehem, PA. For sunrise and sunset
+// times, which don't need precision.
+export async function lastKnownCoordinates(): Promise<{ latitude: number; longitude: number }> {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') return FALLBACK_PLACE;
+    const position = await Location.getLastKnownPositionAsync();
+    return position?.coords ?? FALLBACK_PLACE;
+  } catch {
+    return FALLBACK_PLACE;
+  }
+}
+
 async function describePlace(latitude: number, longitude: number): Promise<Pick<Place, 'name' | 'countryCode'>> {
   try {
     const [address] = await Location.reverseGeocodeAsync({ latitude, longitude });

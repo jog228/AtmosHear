@@ -16,6 +16,8 @@ export function conditionsFromNwsForecast(shortForecast: string): ConditionId[] 
   const sleet = has('freezing', 'sleet', 'ice pellets', 'wintry mix', 'rain and snow', 'snow and rain');
   const snow = !sleet && has('snow', 'flurries', 'blizzard');
   if (thunder) conditions.push('thunderstorm');
+  // Hail can come with or without a thunderstorm.
+  if (has('hail')) conditions.push('hail');
   if (sleet) conditions.push('sleet');
   if (snow) conditions.push('snow');
   // Thunderstorms already include rain, sleet covers freezing rain, and
