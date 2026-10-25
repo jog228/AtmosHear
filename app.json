@@ -80,7 +80,7 @@
     },
     "owner": "des156-atmoshear",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/47a5a9df-a0ac-4c0c-9d42-833bb5dc19b8"
