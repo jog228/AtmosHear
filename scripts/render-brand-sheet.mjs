@@ -1,5 +1,5 @@
-// Renders the brand elements where the app uses them (the loading state's
-// dot field, the alarm rows, and the pulsing cue rings) in light,
+// Renders the brand elements where the app uses them (the loading ripple,
+// the alarm rows, and the pulsing cue rings) in light,
 // dark, and high contrast to one preview sheet,
 // design/previews/brand-elements.png. Drawn from the same shape data as
 // the app (src/components/brand/geometry.ts) and the same theme tokens.
@@ -15,13 +15,18 @@ import { fileURLToPath } from 'node:url';
 
 import {
   clockSunShape,
-  FIELD_VIEW,
-  halftoneMarks,
   PULSE_FALL_MS,
   PULSE_RISE_MS,
   PULSE_SCALE,
   ringDots,
   RINGS_VIEW,
+  RIPPLE_CENTER,
+  RIPPLE_CENTER_R,
+  RIPPLE_DOT_R,
+  RIPPLE_STILL,
+  RIPPLE_VIEW,
+  rippleOpacity,
+  rippleRings,
   SUN_CENTER,
   SUN_VIEW,
 } from '../src/components/brand/geometry.ts';
@@ -61,9 +66,10 @@ const columns = THEMES.map(({ label, theme, alarm }) => {
   return `<section style="background:${colors.background};color:${colors.textPrimary}">
     <h2>${label}</h2>
 
-    <h3 style="color:${colors.textSecondary}">Loading state (dot field)</h3>
-    <div class="header">
-      ${field(132, 'rings', illustration)}
+    <h3 style="color:${colors.textSecondary}">Loading ripple (each ring's peak, Reduce Motion)</h3>
+    <div class="pulses">
+      ${[840, 1240, 1640].map((ms) => ripple(84, (ring) => rippleOpacity(ring, ms), colors, illustration, `${ms} ms`)).join('')}
+      ${ripple(84, () => RIPPLE_STILL, colors, illustration, 'still')}
     </div>
 
     <h3 style="color:${colors.textSecondary}">Alarm rows (on, off)</h3>
@@ -134,17 +140,14 @@ function sun(size, hour, minute, ill, { dimmed = false } = {}) {
     ${line(s.hour)}${line(s.minute)}<circle cx="${c}" cy="${c}" r="${s.pin}" fill="${hands}"/></svg>`;
 }
 
-// Same drawing as src/components/brand/halftone-field.tsx.
-function field(size, pattern, ill) {
-  const marks = halftoneMarks(pattern)
-    .map((m) => {
-      const opacity = m.opacity === undefined ? '' : ` opacity="${m.opacity}"`;
-      if (m.kind === 'dot') return `<circle cx="${m.x}" cy="${m.y}" r="${m.r}"${opacity}/>`;
-      return `<rect x="${m.x - m.w / 2}" y="${m.y - m.h / 2}" width="${m.w}" height="${m.h}" rx="${Math.min(m.w, m.h) / 2}"${opacity}/>`;
-    })
+// Same drawing as src/components/brand/ripple-loader.tsx, with each ring at
+// the opacity `opacityOf(ring)` gives.
+function ripple(size, opacityOf, colors, ill, caption) {
+  const rings = rippleRings()
+    .map((dots, ring) => `<g fill="${ill.dots}" opacity="${opacityOf(ring).toFixed(2)}">${dots.map((d) => `<circle cx="${d.x}" cy="${d.y}" r="${RIPPLE_DOT_R}"/>`).join('')}</g>`)
     .join('');
-  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${FIELD_VIEW} ${FIELD_VIEW}"><g fill="${ill.dots}">${marks}</g></svg>`;
-  return centered(size, svg, '');
+  const center = `<circle cx="${RIPPLE_CENTER}" cy="${RIPPLE_CENTER}" r="${RIPPLE_CENTER_R}" fill="${colors.accent}"/>`;
+  return `<figure><svg width="${size}" height="${size}" viewBox="0 0 ${RIPPLE_VIEW} ${RIPPLE_VIEW}">${rings}${center}</svg><figcaption>${caption}</figcaption></figure>`;
 }
 
 // Same drawing as src/components/brand/dot-rings.tsx at a pulse of

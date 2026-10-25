@@ -1,14 +1,8 @@
-// The brand illustrations as plain data: dots, pills, and clock hands in a
+// The brand illustrations as plain data: dots and clock hands in a
 // fixed view box, scaled to any size by the components next to this file.
 // Pure (no imports), so scripts/render-brand-sheet.mjs draws exactly the
 // same shapes outside the app. Brand code never imports weather or alarm
 // code, so any screen can use it.
-
-// A round dot, or a pill: a rounded rect centered on x, y (wide for wind
-// dashes).
-export type Mark =
-  | { kind: 'dot'; x: number; y: number; r: number; opacity?: number }
-  | { kind: 'pill'; x: number; y: number; w: number; h: number; opacity?: number };
 
 // --- Clock sun -----------------------------------------------------------
 
@@ -70,99 +64,64 @@ export function clockSunShape(size: number, hour: number, minute: number): Clock
 
 export const SUN_CENTER = SUN_C;
 
-// --- Halftone field ------------------------------------------------------
+// --- Ripple loader -------------------------------------------------------
 
-// Drawn on a 240x240 grid, in a round field.
-export const FIELD_VIEW = 240;
-const C = FIELD_VIEW / 2;
-const FIELD_R = 114;
-// The empty middle of the field.
-const INNER_R = 12;
+// The loading animation ("Loading animation · 1 · Ripple"), on a 160x160
+// grid: a center dot and three rings of same-size dots that brighten in
+// turn, so light ripples outward.
+export const RIPPLE_VIEW = 160;
+const RIPPLE_C = RIPPLE_VIEW / 2;
+export const RIPPLE_CENTER_R = 6;
+export const RIPPLE_DOT_R = 3;
+const RIPPLE_RINGS = [
+  { count: 8, radius: 22 },
+  { count: 14, radius: 42 },
+  { count: 20, radius: 62 },
+];
 
-export type FieldPattern = 'radial' | 'rings' | 'dashes';
-
-export function halftoneMarks(pattern: FieldPattern): Mark[] {
-  const inner = INNER_R;
-  switch (pattern) {
-    case 'rings':
-      return rings(inner);
-    case 'radial':
-      return radial(inner);
-    case 'dashes':
-      return dashes(inner);
-  }
+// Each ring's dots, first dot at the top.
+export function rippleRings(): { x: number; y: number }[][] {
+  return RIPPLE_RINGS.map(({ count, radius }) =>
+    Array.from({ length: count }, (_, i) => {
+      const angle = -Math.PI / 2 + (i / count) * 2 * Math.PI;
+      return { x: round(RIPPLE_C + radius * Math.cos(angle)), y: round(RIPPLE_C + radius * Math.sin(angle)) };
+    }),
+  );
 }
+export const RIPPLE_CENTER = RIPPLE_C;
 
-// Frame 06: rings of dots from the middle to the edge. Dots shrink outward
-// and are a little bigger on the right, like halftone shading.
-function rings(inner: number): Mark[] {
-  const marks: Mark[] = [];
-  const first = inner + 2;
-  const count = Math.floor((FIELD_R - first) / 8) + 1;
-  for (let k = 0; k < count; k++) {
-    const radius = first + k * 8;
-    const t = (radius - 50) / 64;
-    const base = Math.max(1.5, 4.4 - Math.max(0, t) * 2.9);
-    const dots = Math.max(6, Math.round((2 * Math.PI * radius) / 10.5));
-    // Every other ring is offset half a step, so dots don't line up.
-    const offset = k % 2 === 0 ? 0 : Math.PI / dots;
-    for (let i = 0; i < dots; i++) {
-      const angle = offset + (i / dots) * 2 * Math.PI;
-      marks.push(dot(C + radius * Math.cos(angle), C + radius * Math.sin(angle), base * (1 + 0.22 * Math.cos(angle))));
-    }
-  }
-  return marks;
-}
+// Each ring's opacity goes RIPPLE_MIN -> 1 -> RIPPLE_MIN over RIPPLE_LOOP_MS
+// (ease-in-out), peaking RIPPLE_PEAK of the way through; ring 2 starts 0.4 s
+// after ring 1 and ring 3 0.8 s after. With Reduce Motion every ring holds
+// at RIPPLE_STILL.
+export const RIPPLE_LOOP_MS = 2400;
+export const RIPPLE_PEAK = 0.35;
+export const RIPPLE_MIN = 0.18;
+export const RIPPLE_DELAYS_MS = [0, 400, 800];
+export const RIPPLE_STILL = 0.6;
 
-// Frame 04: a burst of dots along rays, big near the middle and shrinking
-// outward.
-function radial(inner: number): Mark[] {
-  const marks: Mark[] = [];
-  const rays = 36;
-  for (let ray = 0; ray < rays; ray++) {
-    const angle = (ray / rays) * 2 * Math.PI;
-    for (let step = 0, radius = inner; radius <= 112; step++) {
-      const r = 3.6 - (Math.max(0, radius - 48) / 64) * 2.3;
-      // Near the middle the rays crowd together, so every other one starts
-      // further out.
-      if (ray % 2 === 0 || radius > 40) marks.push(dot(C + radius * Math.cos(angle), C + radius * Math.sin(angle), r));
-      radius += 6.5 + step * 0.6;
-    }
-  }
-  return marks;
-}
-
-// Frame 02: rows of horizontal oval dashes of different lengths, like
-// moving air, faint and strong.
-function dashes(inner: number): Mark[] {
-  const marks: Mark[] = [];
-  let n = 0;
-  for (let row = 0; 12 + row * 11 < FIELD_VIEW; row++) {
-    const y = 12 + row * 11;
-    const opacity = round(0.55 + noise(row + 300) * 0.45);
-    let x = 6 + noise(row + 200) * 10;
-    while (x < FIELD_VIEW) {
-      const w = 6 + Math.round(noise(n++) * 14);
-      const cx = x + w / 2;
-      const dy = Math.abs(y - C);
-      const clearOfHole = dy > inner || Math.abs(cx - C) > w / 2 + Math.sqrt(inner ** 2 - dy ** 2);
-      if (inField(x, y, 2) && inField(x + w, y, 2) && clearOfHole) {
-        marks.push({ kind: 'pill', x: round(cx), y, w, h: 3.6, opacity });
-      }
-      x += w + 5 + noise(n++) * 6;
-    }
-  }
-  return marks;
+// A ring's opacity `ms` after the animation starts (for previews; the app
+// runs the same curve in Reanimated).
+export function rippleOpacity(ring: number, ms: number): number {
+  const t = ms - RIPPLE_DELAYS_MS[ring];
+  if (t < 0) return RIPPLE_MIN;
+  const phase = (t % RIPPLE_LOOP_MS) / RIPPLE_LOOP_MS;
+  const rising = phase < RIPPLE_PEAK;
+  const local = rising ? phase / RIPPLE_PEAK : (phase - RIPPLE_PEAK) / (1 - RIPPLE_PEAK);
+  // Ease in-out (cubic), like Reanimated's Easing.inOut(Easing.cubic).
+  const eased = local < 0.5 ? 4 * local ** 3 : 1 - (-2 * local + 2) ** 3 / 2;
+  return rising ? RIPPLE_MIN + (1 - RIPPLE_MIN) * eased : 1 - (1 - RIPPLE_MIN) * eased;
 }
 
 // --- Dot rings -----------------------------------------------------------
 
-// Drawn on the same 240x240 grid. Frame 11: evenly spaced rings of
+// Drawn on a 240x240 grid. Frame 11: evenly spaced rings of
 // same-size dots around a hollow middle. Each dot has the index of its
 // ring, so rings can alternate colors.
 export type RingDot = { x: number; y: number; r: number; ring: number };
 
-export const RINGS_VIEW = FIELD_VIEW;
+export const RINGS_VIEW = 240;
+const C = RINGS_VIEW / 2;
 // The hollow middle's radius on the grid: anything placed in the middle
 // should stay inside it (a little under half the size).
 export const RINGS_HOLLOW = 50;
@@ -191,22 +150,6 @@ export const PULSE_RISE_MS = 40;
 export const PULSE_FALL_MS = 240;
 
 // --- Helpers -------------------------------------------------------------
-
-function dot(x: number, y: number, r: number): Mark {
-  return { kind: 'dot', x: round(x), y: round(y), r: round(r) };
-}
-
-// True if a point (with a margin) is inside the round field.
-function inField(x: number, y: number, margin = 0): boolean {
-  return Math.hypot(x - C, y - C) <= FIELD_R - margin;
-}
-
-// A fixed, repeatable 0-1 "random" number, so fields never change between
-// renders.
-function noise(n: number): number {
-  const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
 
 function round(n: number) {
   return Math.round(n * 100) / 100;
