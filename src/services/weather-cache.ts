@@ -32,8 +32,9 @@ export async function loadCachedWeather(): Promise<WeatherData | null> {
       ...data,
       source: 'cache',
       hourly: data.hourly.filter((hour) => hour.time + HOUR_MS > now),
-      // Days that have passed are dropped; saves from before the 3-day
-      // forecast have none.
+      // Days that have passed are dropped. Saves from before the 5-day
+      // forecast have 3 days (or none, before the 3-day one); they show as
+      // they are.
       daily: (data.daily ?? []).filter((day) => day.date >= today),
     };
   } catch {

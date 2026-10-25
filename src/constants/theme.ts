@@ -101,6 +101,10 @@ export type ThemeColors = {
   switchTrackOff: string;
   switchBorderOff: string;
   switchThumbOff: string;
+  // The sun card's daylight bar: the dots still to come. The dots already
+  // passed are `accent`, and the two pass 3:1 (checked in
+  // src/components/daylight-bar.tsx).
+  progressTrack: string;
 };
 
 // Frosted glass cards over soft condition-colored blobs. Unused for now:
@@ -130,12 +134,12 @@ export type Glass = {
 };
 
 // The dotted brand illustrations (src/components/brand/: the clock-face
-// sun, the halftone field, the dot rings) and the sun card's arc.
+// sun, the halftone field, the dot rings) and the sun card's "now" dot.
 // Decorative: the same information is always in text.
 export type IllustrationColors = {
-  // Halftone and ring dots, and the sun card's arc.
+  // Halftone and ring dots.
   dots: string;
-  // The sun's edge.
+  // The sun's edge, and the "now" dot on the sun card's daylight bar.
   sun: string;
   // The clock face inside the sun.
   sunFace: string;
@@ -187,6 +191,8 @@ export const lightTheme: Theme = {
     switchTrackOff: palette.white,
     switchBorderOff: palette.gray,
     switchThumbOff: palette.gray,
+    // 3.9:1 with deepBlue; 3.0:1 on the white card.
+    progressTrack: palette.gray,
   },
   illustration: {
     dots: palette.periwinkle,
@@ -231,6 +237,8 @@ export const darkTheme: Theme = {
     switchTrackOff: darkPalette.navy,
     switchBorderOff: darkPalette.gray,
     switchThumbOff: darkPalette.gray,
+    // A fill, never text. 3.3:1 with periwinkle.
+    progressTrack: darkPalette.royalBlue,
   },
   // A navy cloud would vanish on navy, so clouds are ice blue.
   illustration: {
@@ -274,6 +282,8 @@ export const highContrastTheme: Theme = {
     switchTrackOff: palette.ink,
     switchBorderOff: palette.white,
     switchThumbOff: palette.white,
+    // 5.3:1 with sun. (White would be only 1.6:1 with sun.)
+    progressTrack: palette.slate,
   },
   illustration: {
     dots: palette.white,

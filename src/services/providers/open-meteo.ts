@@ -41,7 +41,7 @@ type OpenMeteoResponse = {
 };
 
 const HOURS_AHEAD = 12;
-const DAYS = 3;
+const DAYS = 5;
 
 // Primary source. Free, no API key, worldwide: https://open-meteo.com/en/docs
 export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
@@ -59,7 +59,7 @@ export async function fetchOpenMeteo(place: Place): Promise<ProviderWeather> {
     'timeformat=unixtime',
     // The first hourly entry is the current hour, followed by the next 12.
     `forecast_hours=${HOURS_AHEAD + 1}`,
-    // Today and the next two days.
+    // Today and the next four days.
     `forecast_days=${DAYS}`,
   ].join('&');
 

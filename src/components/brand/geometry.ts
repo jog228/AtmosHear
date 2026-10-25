@@ -34,11 +34,10 @@ export type ClockSunShape = {
 };
 
 // The clock-face sun from design/frames/06_Weather_home.png. `hour` is
-// 0-23, `minute` 0-59. `edgePoints` sets a thicker edge (in points), for an
-// outline that must stand out at small sizes.
-export function clockSunShape(size: number, hour: number, minute: number, edgePoints?: number): ClockSunShape {
+// 0-23, `minute` 0-59.
+export function clockSunShape(size: number, hour: number, minute: number): ClockSunShape {
   const perPoint = SUN_VIEW / size;
-  const edgeWidth = Math.max(SUN_EDGE, (edgePoints ?? 0) * perPoint);
+  const edgeWidth = SUN_EDGE;
   const r = SUN_C - edgeWidth / 2;
   const k = r / 38;
   const hand = (turns: number, length: number) => {

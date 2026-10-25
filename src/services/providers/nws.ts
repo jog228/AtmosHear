@@ -16,7 +16,10 @@ const HEADERS = {
   Accept: 'application/geo+json',
 };
 const HOURS_AHEAD = 12;
-const DAYS = 3;
+const DAYS = 5;
+// A later day needs this many hours for its high and low to be real: the
+// hourly forecast ends partway through its last day.
+const MIN_DAY_HOURS = 18;
 
 type PointsResponse = {
   properties: { forecastHourly: string };
@@ -63,9 +66,11 @@ export async function fetchNws(place: Place): Promise<ProviderWeather> {
   };
 }
 
-// NWS's hourly forecast runs about a week ahead, so the 3-day forecast comes
+// NWS's hourly forecast runs about a week ahead, so the 5-day forecast comes
 // from grouping its hours by day (no extra request). Today only counts the
-// hours left, so its high or low can be missing earlier hours.
+// hours left, so its high or low can be missing earlier hours. A later day
+// with fewer than MIN_DAY_HOURS hours is left out (fewer rows rather than a
+// misleading high or low).
 function toDays(periods: NwsPeriod[]): DailyForecast[] {
   const byDate = new Map<string, NwsPeriod[]>();
   for (const period of periods) {
@@ -73,7 +78,8 @@ function toDays(periods: NwsPeriod[]): DailyForecast[] {
     const date = period.startTime.slice(0, 10);
     byDate.set(date, [...(byDate.get(date) ?? []), period]);
   }
-  return [...byDate].slice(0, DAYS).map(([date, hours]) => {
+  const days = [...byDate].filter(([, hours], i) => i === 0 || hours.length >= MIN_DAY_HOURS);
+  return days.slice(0, DAYS).map(([date, hours]) => {
     const temperatures = hours.map(toFahrenheit);
     const daytime = hours.filter((hour) => hour.isDaytime);
     return {

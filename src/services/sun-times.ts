@@ -24,6 +24,12 @@ export function sunPhase(now: number, times: SunTimes): SunPhase {
   return { kind: 'day', daylightLeftMs: times.sunset - now };
 }
 
+// How much of today's daylight has passed, 0 (sunrise or earlier) to 1
+// (sunset or later).
+export function daylightPassed(now: number, times: SunTimes): number {
+  return Math.min(1, Math.max(0, (now - times.sunrise) / (times.sunset - times.sunrise)));
+}
+
 // 11_400_000 -> { short: "3 hr 10 min", spoken: "3 hours 10 minutes" }.
 // Under an hour: "45 min". Rounds down to the minute.
 export function formatDuration(ms: number): { short: string; spoken: string } {

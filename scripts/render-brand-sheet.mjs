@@ -1,5 +1,5 @@
 // Renders the brand elements where the app uses them (the Alarms header,
-// an alarm row, the sun card marker, and the pulsing cue rings) in light,
+// the alarm rows, and the pulsing cue rings) in light,
 // dark, and high contrast to one preview sheet,
 // design/previews/brand-elements.png. Drawn from the same shape data as
 // the app (src/components/brand/geometry.ts) and the same theme tokens.
@@ -73,16 +73,6 @@ const columns = THEMES.map(({ label, theme, alarm }) => {
       ${alarmRow({ time: '9:45', period: 'PM', subtitle: 'Wind down, Every day', hour: 21, minute: 45, on: false }, theme, alarm, true)}
     </div>
 
-    <h3 style="color:${colors.textSecondary}">Sun card marker (1:50 PM)</h3>
-    <div class="card" style="${card}">
-      <div class="times">
-        <div><div class="small" style="color:${colors.textSecondary}">Sunrise</div><div class="big">7:12 AM</div></div>
-        <div style="text-align:right"><div class="small" style="color:${colors.textSecondary}">Sunset</div><div class="big">6:21 PM</div></div>
-      </div>
-      ${sunArc(COLUMN_W - 2 * PAD - 40, 0.595, 13, 50, theme)}
-      <div class="small center" style="color:${colors.textSecondary}">4 hr 31 min of daylight left</div>
-    </div>
-
     <h3 style="color:${colors.textSecondary}">Cue rings on a strong tap</h3>
     <div class="pulses">
       ${pulseFrame(0, 'tap at 0 ms', illustration)}
@@ -93,7 +83,7 @@ const columns = THEMES.map(({ label, theme, alarm }) => {
 }).join('');
 
 const width = THEMES.length * COLUMN_W;
-const height = 1010;
+const height = 720;
 const html = `<!doctype html><meta charset="utf-8"><style>
   * { margin: 0; box-sizing: border-box; }
   body { width: ${width}px; font-family: -apple-system, system-ui, sans-serif; background: #fff; }
@@ -103,16 +93,12 @@ const html = `<!doctype html><meta charset="utf-8"><style>
   h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 12px; }
   .header { display: flex; align-items: center; justify-content: space-between; }
   .title { font-size: 34px; font-weight: 700; }
-  .list, .card { border-radius: 16px; overflow: hidden; }
-  .card { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .list { border-radius: 16px; overflow: hidden; }
   .row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; min-height: 88px; }
   .time { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; }
   .period { font-size: 26px; margin-left: 2px; }
   .grow { flex: 1; }
-  .times { display: flex; justify-content: space-between; }
   .small { font-size: 15px; }
-  .big { font-size: 24px; font-weight: 700; }
-  .center { text-align: center; }
   .pulses { display: flex; justify-content: space-between; }
   figure { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; }
   .stack { position: relative; }
@@ -136,11 +122,11 @@ execFileSync(CHROME, [
 console.log(`Wrote ${OUT} (${width * 2}x${height * 2})`);
 
 // Same drawing as src/components/brand/clock-sun.tsx.
-function sun(size, hour, minute, ill, { outline, outlineWidth = 2, dimmed = false } = {}) {
-  const s = clockSunShape(size, hour, minute, outline ? outlineWidth : undefined);
+function sun(size, hour, minute, ill, { dimmed = false } = {}) {
+  const s = clockSunShape(size, hour, minute);
   const c = SUN_CENTER;
   const face = dimmed ? 'none' : ill.sunFace;
-  const edge = dimmed ? ill.dots : (outline ?? ill.sun);
+  const edge = dimmed ? ill.dots : ill.sun;
   const hands = dimmed ? ill.dots : ill.hands;
   const line = (end) =>
     `<line x1="${c}" y1="${c}" x2="${end.x2}" y2="${end.y2}" stroke="${hands}" stroke-width="${s.handWidth}" stroke-linecap="round"/>`;
@@ -197,24 +183,5 @@ function alarmRow(a, theme, alarm, divider = false) {
     </div>
     <svg width="51" height="31"><rect width="51" height="31" rx="15.5" fill="${track}"/>
       <circle cx="${a.on ? 35.5 : 15.5}" cy="15.5" r="13.5" fill="${thumb}"/></svg>
-  </div>`;
-}
-
-// Same layout as src/components/sun-arc.tsx.
-function sunArc(width, progress, hour, minute, theme) {
-  const HEIGHT = 56;
-  const MARKER = 26;
-  const INSET = MARKER / 2;
-  const span = width - INSET * 2;
-  const point = (t) => ({ x: INSET + span * t, y: HEIGHT - INSET - (HEIGHT - INSET * 2) * Math.sin(Math.PI * t) });
-  const count = Math.round(span / 11) + 1;
-  const dots = Array.from({ length: count }, (_, i) => {
-    const { x, y } = point(i / (count - 1));
-    return `<circle cx="${x}" cy="${y}" r="1.8" fill="${theme.illustration.dots}"/>`;
-  }).join('');
-  const m = point(progress);
-  return `<div class="stack" style="width:${width}px;height:${HEIGHT}px">
-    <svg width="${width}" height="${HEIGHT}" style="left:0;top:0">${dots}</svg>
-    <div style="left:${m.x - INSET}px;top:${m.y - INSET}px;line-height:0">${sun(MARKER, hour, minute, theme.illustration, { outline: theme.colors.accent })}</div>
   </div>`;
 }

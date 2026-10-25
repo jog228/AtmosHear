@@ -2,7 +2,8 @@
 // in grayscale, to one contact sheet, design/previews/condition-icons.png,
 // from the same dot data the app draws
 // (src/components/icons/condition-shapes.ts). Use it to check that no two
-// icons share a silhouette.
+// icons share a silhouette. Below them are the sun card's sunrise and
+// sunset icons (icons/sun-shapes.ts), including their in-app 22pt.
 //
 // Run: node scripts/render-icon-sheet.mjs
 // Needs Node 23.6+ (to load the .ts files) and Google Chrome.
@@ -26,6 +27,7 @@ registerHooks({
 });
 
 const { conditionIconDots } = await import('../src/components/icons/condition-shapes.ts');
+const { sunriseDots, sunsetDots } = await import('../src/components/icons/sun-shapes.ts');
 const { CONDITION_IDS } = await import('../src/constants/conditions.ts');
 const { lightTheme } = await import('../src/constants/theme.ts');
 
@@ -61,13 +63,29 @@ const rows = ROWS.map(
   </div>`,
 ).join('');
 
+// The sun card icons, at the sun card's size (22pt) and the sheet's.
+const SUN_ICONS = [
+  { name: 'sunrise', dots: sunriseDots },
+  { name: 'sunset', dots: sunsetDots },
+];
+const SUN_SIZES = [22, 24, 48];
+const sunRows = `<h2>Sun card</h2>
+  <div class="row" style="height:36px"><div class="label"></div>${SUN_SIZES.map((s) => `<div class="cell name">${s}pt</div>`).join('')}</div>
+  ${SUN_ICONS.map(
+    ({ name, dots }) => `<div class="row">
+      <div class="label" style="text-transform:capitalize">${name}</div>
+      ${SUN_SIZES.map((size) => `<div class="cell">${icon(dots, size)}</div>`).join('')}
+    </div>`,
+  ).join('')}`;
+
 const width = PAD * 2 + LABEL_W + CONDITION_IDS.length * CELL;
-const height = 96 + 36 + ROWS.length * 80 + PAD;
+const height = 96 + 36 + ROWS.length * 80 + 60 + 36 + SUN_ICONS.length * 80 + PAD;
 const html = `<!doctype html><meta charset="utf-8"><style>
   * { margin: 0; box-sizing: border-box; }
   body { width: ${width}px; padding: 28px ${PAD}px; font-family: -apple-system, system-ui, sans-serif;
     background: ${colors.card}; color: ${colors.textPrimary}; }
   h1 { font-size: 26px; font-weight: 700; }
+  h2 { font-size: 20px; font-weight: 700; margin-top: 28px; }
   p { font-size: 15px; color: ${colors.textSecondary}; margin: 4px 0 20px; }
   .row { display: flex; align-items: center; height: 80px; }
   .row.gray svg { filter: grayscale(1) contrast(0.6); }
@@ -78,7 +96,8 @@ const html = `<!doctype html><meta charset="utf-8"><style>
 <h1>AtmosHear · Condition icons</h1>
 <p>From src/components/icons/condition-shapes.ts, in the light theme's accent color.</p>
 <div class="row" style="height:36px"><div class="label"></div>${names}</div>
-${rows}`;
+${rows}
+${sunRows}`;
 
 const work = mkdtempSync(join(tmpdir(), 'icon-sheet-'));
 const page = join(work, 'sheet.html');
