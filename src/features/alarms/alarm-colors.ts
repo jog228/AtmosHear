@@ -1,4 +1,4 @@
-import { darkPalette, palette, withAlpha, type ThemeName } from '@/constants/theme';
+import { bedsidePalette, darkPalette, palette, withAlpha, type ThemeName } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // The Alarms tab's colors, built only from the app's base palette (no
@@ -95,3 +95,8 @@ const COLORS: Record<ThemeName, AlarmColors> = {
 export function useAlarmColors(): AlarmColors {
   return COLORS[useTheme().name];
 }
+
+// Bedside mode's colors: the same dark, dim set in every theme (contrast
+// notes are with bedsidePalette in src/constants/theme.ts).
+export const BEDSIDE_COLORS = bedsidePalette;
+export type BedsideColors = typeof bedsidePalette;

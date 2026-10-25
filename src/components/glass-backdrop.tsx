@@ -1,6 +1,6 @@
 import { BlurTargetView } from 'expo-blur';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewInstance, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -19,7 +19,7 @@ import { useConditionColor, useTheme } from '@/hooks/use-theme';
 
 type Backdrop = {
   // The view that glass cards blur (Android needs a ref to it).
-  target: RefObject<View | null>;
+  target: RefObject<ViewInstance | null>;
   // The condition behind the cards, so each card can pick its opacity.
   condition?: ConditionId;
 };
@@ -44,7 +44,7 @@ type Props = {
 // glass to pick up. Only cards go inside, never page text: the blobs are too
 // strong for text to sit directly on them.
 export function GlassBackdrop({ condition, bleed = { top: 0, sides: 0 }, style, children }: Props) {
-  const target = useRef<View | null>(null);
+  const target = useRef<ViewInstance | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

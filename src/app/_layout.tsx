@@ -7,18 +7,24 @@ import {
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { LightOverlay } from '@/components/light-overlay';
 import { AlarmHost } from '@/features/alarms/alarm-host';
+import { lockPortrait } from '@/features/alarms/bedside-orientation';
+import { BedsideSlotsProvider } from '@/features/alarms/bedside-slots';
 import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
+import { useBedsideWeather } from '@/hooks/use-bedside-weather';
 import { PreferencesProvider, usePreferences } from '@/hooks/use-preferences';
 import type { Theme } from '@/constants/theme';
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
+import { registerWakeWeather } from '@/services/wake-weather';
 
 // ThemeProvider hides the splash screen once the saved settings have loaded.
 SplashScreen.preventAutoHideAsync();
+// Portrait everywhere; bedside mode turns to landscape while it's open.
+lockPortrait();
 
 export default function RootLayout() {
   return (
@@ -27,9 +33,13 @@ export default function RootLayout() {
       <PreferencesProvider>
         <OpeningPreferences>
           <ThemeProvider>
-            <ThemedStack />
+            <BedsideWeather>
+              <ThemedStack />
+            </BedsideWeather>
             {/* Rings alarms (and opens the ringing screen) on any tab. */}
             <AlarmHost />
+            {/* Plays the weather under a ringing alarm. */}
+            <WakeWeather />
             {/* Above every screen; never takes taps or VoiceOver focus. */}
             <LightOverlay />
           </ThemeProvider>
@@ -46,6 +56,24 @@ function OpeningPreferences({ children }: { children: ReactNode }) {
   return (
     <OpeningPreferencesProvider allowSimulatedTime={preferences.developerMode}>{children}</OpeningPreferencesProvider>
   );
+}
+
+// Fills bedside mode's weather and sky slots from the weather side, since
+// alarm code can't import weather code.
+function BedsideWeather({ children }: { children: ReactNode }) {
+  return <BedsideSlotsProvider value={useBedsideWeather()}>{children}</BedsideSlotsProvider>;
+}
+
+// Registers the weather on wake once, reading the latest preferences when
+// an alarm rings (for Developer test weather).
+function WakeWeather() {
+  const { preferences } = usePreferences();
+  const latest = useRef(preferences);
+  useEffect(() => {
+    latest.current = preferences;
+  });
+  useEffect(() => registerWakeWeather(() => latest.current), []);
+  return null;
 }
 
 function ThemedStack() {
@@ -70,7 +98,6 @@ function ThemedStack() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
         {/* Cue screens: the native back button only (chevron), since each
             screen has its own big headline. */}
-        <Stack.Screen name="feel-and-hear" options={{ title: 'Feel and hear', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         <Stack.Screen name="sounds" options={{ title: 'Sounds', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         <Stack.Screen name="condition/[id]" options={{ title: 'Condition', headerTitle: '', headerBackButtonDisplayMode: 'minimal' }} />
         {/* Alarms: full screen, no header. The ringing screen can't be

@@ -7,15 +7,15 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { PrimaryButton } from './primary-button';
 
-// Shared by the Feel & hear and condition detail screens.
+// Parts of the condition detail screen.
 
 // The big condition name. Long single words ("Thunderstorm") shrink to fit
 // rather than run off the screen.
-export function ConditionName({ condition, size = 'display' }: { condition: ConditionId; size?: 'display' | 'h1' }) {
+export function ConditionName({ condition }: { condition: ConditionId }) {
   const styles = createStyles(useTheme());
   return (
     <Text
-      style={[styles.name, size === 'h1' && styles.nameH1]}
+      style={styles.name}
       accessibilityRole="header"
       numberOfLines={2}
       adjustsFontSizeToFit
@@ -44,9 +44,6 @@ function createStyles(theme: Theme) {
     name: {
       ...typography.display,
       color: theme.colors.textPrimary,
-    },
-    nameH1: {
-      ...typography.h1,
     },
   });
 }

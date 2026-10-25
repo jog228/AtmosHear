@@ -21,6 +21,8 @@ class TonePreview {
     player.addListener('playbackStatusUpdate', (status) => {
       if (status.didJustFinish && this.player === player) this.stop();
     });
+    // The same level the tone rings at.
+    player.volume = ALARM_TONES[tone].toneVolume;
     player.play();
     this.player = player;
     this.playing = tone;

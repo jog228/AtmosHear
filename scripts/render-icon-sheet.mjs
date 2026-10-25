@@ -1,4 +1,4 @@
-// Renders all 13 condition icons at 24pt and 48pt, in the accent color and
+// Renders all 14 condition icons at 24pt and 48pt, in the accent color and
 // in grayscale, to one contact sheet, design/previews/condition-icons.png,
 // from the same dot data the app draws
 // (src/components/icons/condition-shapes.ts). Use it to check that no two

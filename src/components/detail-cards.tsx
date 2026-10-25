@@ -2,30 +2,27 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 
 import { getAqiLevel } from '@/constants/air-quality';
+import type { ConditionId } from '@/constants/conditions';
 import { spacing, typography, type Theme } from '@/constants/theme';
 import { useTemperature } from '@/hooks/use-temperature';
 import { useTheme } from '@/hooks/use-theme';
 import type { AirQuality, CurrentWeather } from '@/services/weather-data';
 
 import { GlassCard } from './glass-card';
-import {
-  AirQualityIcon,
-  ClearIcon,
-  FeelsLikeIcon,
-  HumidityIcon,
-  LightRainIcon,
-  SnowIcon,
-  WindIcon,
-  type DotIconComponent,
-} from './icons';
+import { AirQualityIcon, FeelsLikeIcon, HumidityIcon, type DotIconComponent } from './icons';
+import { ConditionIcon } from './weather-icon';
 
 type Detail = {
   label: string;
   value: string;
   // The whole card, as VoiceOver reads it.
   spoken: string;
-  icon: DotIconComponent;
+  // A detail icon, or a condition whose icon stands for it (wind, rain, UV
+  // as clear's sun, snow), drawn through ConditionIcon like everywhere else.
+  icon: DotIconComponent | ConditionId;
 };
+
+const DETAIL_ICON_SIZE = 26;
 
 // Three cards fit on screen, plus this share of the next one peeking in at
 // the right edge so it's clear the row scrolls, like the frames.
@@ -72,7 +69,11 @@ export function DetailCards({ current, airQuality }: { current: CurrentWeather; 
           accessibilityLabel={i === 0 ? `Weather details, ${details.length} items. ${detail.spoken}` : detail.spoken}
         >
           {/* Accent color, like the frames: 3:1 or more on cards in every theme. */}
-          <detail.icon size={26} color={theme.colors.accent} />
+          {typeof detail.icon === 'string' ? (
+            <ConditionIcon id={detail.icon} size={DETAIL_ICON_SIZE} />
+          ) : (
+            <detail.icon size={DETAIL_ICON_SIZE} color={theme.colors.accent} />
+          )}
           <Text style={styles.value}>{detail.value}</Text>
           <Text style={styles.label}>{detail.label}</Text>
         </GlassCard>
@@ -91,7 +92,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
       label: 'Wind',
       value: `${current.windSpeed} mph`,
       spoken: `Wind, ${current.windSpeed} miles per hour`,
-      icon: WindIcon,
+      icon: 'wind',
     },
     {
       label: 'Humidity',
@@ -103,7 +104,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
       label: 'Rain',
       value: `${current.rainChance}%`,
       spoken: `Rain, ${current.rainChance} percent chance`,
-      icon: LightRainIcon,
+      icon: 'light-rain',
     },
     {
       label: 'Feels like',
@@ -116,7 +117,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
       label: uvLevel ? `UV · ${uvLevel}` : 'UV',
       value: uvIndex === null ? '–' : String(uvIndex),
       spoken: uvIndex === null ? 'UV index unavailable' : `UV index ${uvIndex}, ${uvLevel?.toLowerCase()}`,
-      icon: ClearIcon,
+      icon: 'clear',
     },
     {
       // 2.5" (one decimal), or 0" when none. NWS has no snowfall amounts.
@@ -126,7 +127,7 @@ function describeDetails(current: CurrentWeather, airQuality: AirQuality | null,
         snowToday === null
           ? 'Snowfall unavailable'
           : `Snow today, ${formatInches(snowToday)} ${snowToday === 1 ? 'inch' : 'inches'}`,
-      icon: SnowIcon,
+      icon: 'snow',
     },
     {
       // "42" with "Air · Good". Text stays the usual colors, not color-coded

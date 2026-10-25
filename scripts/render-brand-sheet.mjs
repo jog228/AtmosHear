@@ -1,5 +1,5 @@
-// Renders the brand elements where the app uses them (the Alarms header,
-// the alarm rows, and the pulsing cue rings) in light,
+// Renders the brand elements where the app uses them (the loading state's
+// dot field, the alarm rows, and the pulsing cue rings) in light,
 // dark, and high contrast to one preview sheet,
 // design/previews/brand-elements.png. Drawn from the same shape data as
 // the app (src/components/brand/geometry.ts) and the same theme tokens.
@@ -61,10 +61,9 @@ const columns = THEMES.map(({ label, theme, alarm }) => {
   return `<section style="background:${colors.background};color:${colors.textPrimary}">
     <h2>${label}</h2>
 
-    <h3 style="color:${colors.textSecondary}">Alarms header</h3>
+    <h3 style="color:${colors.textSecondary}">Loading state (dot field)</h3>
     <div class="header">
-      <span class="title">Alarms</span>
-      ${field(132, 'rings', true, illustration, sun(44, 10, 10, illustration))}
+      ${field(132, 'rings', illustration)}
     </div>
 
     <h3 style="color:${colors.textSecondary}">Alarm rows (on, off)</h3>
@@ -92,7 +91,6 @@ const html = `<!doctype html><meta charset="utf-8"><style>
   h2 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
   h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 12px; }
   .header { display: flex; align-items: center; justify-content: space-between; }
-  .title { font-size: 34px; font-weight: 700; }
   .list { border-radius: 16px; overflow: hidden; }
   .row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; min-height: 88px; }
   .time { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; }
@@ -137,8 +135,8 @@ function sun(size, hour, minute, ill, { dimmed = false } = {}) {
 }
 
 // Same drawing as src/components/brand/halftone-field.tsx.
-function field(size, pattern, hole, ill, middle = '') {
-  const marks = halftoneMarks(pattern, hole)
+function field(size, pattern, ill) {
+  const marks = halftoneMarks(pattern)
     .map((m) => {
       const opacity = m.opacity === undefined ? '' : ` opacity="${m.opacity}"`;
       if (m.kind === 'dot') return `<circle cx="${m.x}" cy="${m.y}" r="${m.r}"${opacity}/>`;
@@ -146,7 +144,7 @@ function field(size, pattern, hole, ill, middle = '') {
     })
     .join('');
   const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${FIELD_VIEW} ${FIELD_VIEW}"><g fill="${ill.dots}">${marks}</g></svg>`;
-  return centered(size, svg, middle);
+  return centered(size, svg, '');
 }
 
 // Same drawing as src/components/brand/dot-rings.tsx at a pulse of

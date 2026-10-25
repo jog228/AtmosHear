@@ -1,8 +1,19 @@
 import type { ConditionId } from '@/constants/conditions';
 
-// Maps a WMO weather code (used by Open-Meteo) to one of our conditions.
+// Maps a WMO weather code (used by Open-Meteo) to our conditions. Most
+// codes are one condition; a thunderstorm with hail is both.
 // Code table: https://open-meteo.com/en/docs (see "WMO Weather interpretation codes").
-export function conditionFromWmoCode(code: number): ConditionId {
+export function conditionsFromWmoCode(code: number): ConditionId[] {
+  switch (code) {
+    case 96:
+    case 99: // thunderstorm with slight / heavy hail
+      return ['thunderstorm', 'hail'];
+    default:
+      return [conditionFromWmoCode(code)];
+  }
+}
+
+function conditionFromWmoCode(code: number): ConditionId {
   switch (code) {
     case 0:
     case 1: // mainly clear
@@ -37,9 +48,7 @@ export function conditionFromWmoCode(code: number): ConditionId {
     case 85:
     case 86: // snow showers
       return 'snow';
-    case 95:
-    case 96:
-    case 99: // thunderstorm, with or without hail
+    case 95: // thunderstorm without hail
       return 'thunderstorm';
     default:
       return 'overcast';

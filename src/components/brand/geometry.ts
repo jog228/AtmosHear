@@ -76,15 +76,13 @@ export const SUN_CENTER = SUN_C;
 export const FIELD_VIEW = 240;
 const C = FIELD_VIEW / 2;
 const FIELD_R = 114;
-// With `hole`, the field leaves room for a ClockSun a third of its size
-// (radius 40 on this grid) plus a gap.
-const HOLE_R = 48;
-const NO_HOLE_R = 12;
+// The empty middle of the field.
+const INNER_R = 12;
 
 export type FieldPattern = 'radial' | 'rings' | 'dashes';
 
-export function halftoneMarks(pattern: FieldPattern, hole: boolean): Mark[] {
-  const inner = hole ? HOLE_R : NO_HOLE_R;
+export function halftoneMarks(pattern: FieldPattern): Mark[] {
+  const inner = INNER_R;
   switch (pattern) {
     case 'rings':
       return rings(inner);

@@ -19,6 +19,8 @@ export type Ring = {
 
 const FADE_IN_MS = 3000;
 const FADE_STEP_MS = 100;
+// How long setToneGain takes to reach its new level.
+const GAIN_RAMP_MS = 1000;
 // Gives up if nobody answers.
 const AUTO_STOP_MS = 10 * 60_000;
 export const SNOOZE_MS = 9 * 60_000;
@@ -29,14 +31,30 @@ const BUZZ_EVERY_MS = 1000;
 
 type Listener = (ring: Ring | null) => void;
 
-// Rings alarms while the app is open: loops the tone at full volume (even
-// in Silent mode), fading in over 3 seconds, with a repeating vibration
-// that ignores the weather Vibration setting. One ring at a time; the
-// screen at /alarm-ringing shows it. Only runs in the foreground: a closed
-// app can only ring through the backup notification.
+// Why a ring ended: Stop, Snooze, or nobody answered for 10 minutes.
+export type RingEndReason = 'stop' | 'snooze' | 'timeout';
+type RingStartListener = (ring: Ring) => void;
+type RingEndListener = (ring: Ring, reason: RingEndReason) => void;
+
+// Rings alarms while the app is open: loops the tone at its toneVolume
+// (even in Silent mode), fading in over 3 seconds, with a repeating
+// vibration that ignores the weather Vibration setting. One ring at a time;
+// the screen at /alarm-ringing shows it. Only runs in the foreground: a
+// closed app can only ring through the backup notification.
+//
+// Other code can follow rings with onRingStart/onRingEnd and turn the tone
+// down with setToneGain (the weather on wake does, from outside this
+// folder). This file doesn't know who listens.
 class AlarmRinger {
   private ring: Ring | null = null;
   private player: AudioPlayer | null = null;
+  // The tone's volume is toneVolume × fade-in (0-1) × gain (0-1).
+  private toneVolume = 1;
+  private fadeLevel = 0;
+  private gain = 1;
+  private gainTimer?: ReturnType<typeof setInterval>;
+  private startListeners = new Set<RingStartListener>();
+  private endListeners = new Set<RingEndListener>();
   private timers: ReturnType<typeof setTimeout>[] = [];
   private intervals: ReturnType<typeof setInterval>[] = [];
   private snoozeTimer?: ReturnType<typeof setTimeout>;
@@ -67,8 +85,13 @@ class AlarmRinger {
     this.ring = ring;
     this.playTone(ring.tone);
     this.buzz();
-    this.timers.push(setTimeout(() => this.stop(), AUTO_STOP_MS));
+    this.timers.push(
+      setTimeout(() => {
+        if (this.ring) this.end('timeout');
+      }, AUTO_STOP_MS),
+    );
     this.emit();
+    this.startListeners.forEach((listener) => listener(ring));
     return true;
   }
 
@@ -77,7 +100,7 @@ class AlarmRinger {
   snooze() {
     const ring = this.ring;
     if (!ring) return;
-    this.end();
+    this.end('snooze');
     const again: Ring = { ...ring, at: Date.now() + SNOOZE_MS };
     this.snoozeTimer = setTimeout(() => {
       this.snoozeBackup?.cancel();
@@ -88,7 +111,7 @@ class AlarmRinger {
 
   stop() {
     if (!this.ring) return;
-    this.end();
+    this.end('stop');
     // NEXT PHASE (weather overlay): this is where waking up continues.
     // After Stop, the plan is to fade the current weather's ambient sound
     // in over the last of the alarm (or right after it), so you hear the
@@ -104,10 +127,44 @@ class AlarmRinger {
     };
   }
 
-  private end() {
+  // Called each time a ring starts (a snoozed alarm coming back too).
+  onRingStart(listener: RingStartListener) {
+    this.startListeners.add(listener);
+    return () => {
+      this.startListeners.delete(listener);
+    };
+  }
+
+  // Called when a ring ends, with why.
+  onRingEnd(listener: RingEndListener) {
+    this.endListeners.add(listener);
+    return () => {
+      this.endListeners.delete(listener);
+    };
+  }
+
+  // Turns the ringing tone down (or back up) to `gain` (0-1) of its level,
+  // smoothly, over about a second. Resets to 1 when the ring ends.
+  setToneGain(gain: number) {
+    if (!this.ring) return;
+    clearInterval(this.gainTimer);
+    const from = this.gain;
+    const to = Math.min(1, Math.max(0, gain));
+    const startedAt = Date.now();
+    this.gainTimer = setInterval(() => {
+      const t = Math.min(1, (Date.now() - startedAt) / GAIN_RAMP_MS);
+      this.gain = from + (to - from) * t;
+      this.applyVolume();
+      if (t >= 1) clearInterval(this.gainTimer);
+    }, FADE_STEP_MS);
+  }
+
+  private end(reason: RingEndReason) {
+    const ring = this.ring;
     this.silence();
     this.ring = null;
     this.emit();
+    if (ring) this.endListeners.forEach((listener) => listener(ring, reason));
   }
 
   private cancelSnooze() {
@@ -126,13 +183,19 @@ class AlarmRinger {
     player.volume = 0;
     player.play();
     this.player = player;
+    this.toneVolume = ALARM_TONES[tone].toneVolume;
+    this.fadeLevel = 0;
     const startedAt = Date.now();
     const fade = setInterval(() => {
-      const t = Math.min(1, (Date.now() - startedAt) / FADE_IN_MS);
-      player.volume = t;
-      if (t >= 1) clearInterval(fade);
+      this.fadeLevel = Math.min(1, (Date.now() - startedAt) / FADE_IN_MS);
+      this.applyVolume();
+      if (this.fadeLevel >= 1) clearInterval(fade);
     }, FADE_STEP_MS);
     this.intervals.push(fade);
+  }
+
+  private applyVolume() {
+    if (this.player) this.player.volume = this.toneVolume * this.fadeLevel * this.gain;
   }
 
   private buzz() {
@@ -149,6 +212,8 @@ class AlarmRinger {
     this.timers = [];
     this.intervals = [];
     hapticPlayer.cancel();
+    clearInterval(this.gainTimer);
+    this.gain = 1;
     if (this.player) {
       this.player.pause();
       this.player.remove();

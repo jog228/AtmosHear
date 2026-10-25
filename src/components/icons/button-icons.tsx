@@ -3,9 +3,9 @@ import type { Dot } from './shapes';
 
 // Dotted icons for buttons, in the halftone style of design/frames/.
 
-// Feel & hear: a dot with two arcs of dots on each side, like sound and
-// vibration spreading out from it.
-export const FeelAndHearIcon = dotIcon('FeelAndHearIcon', [
+// All sounds (the Sound library button): a dot with two arcs of dots on
+// each side, like sound and vibration spreading out from it.
+export const SoundsIcon = dotIcon('SoundsIcon', [
   [12, 12, 2.6],
   ...arcs(5.6, [-35, 0, 35], 1.15),
   ...arcs(9.6, [-44, -22, 0, 22, 44], 0.95),

@@ -12,6 +12,21 @@ export function nextOccurrence(hour: number, minute: number, now: number): numbe
   return date.getTime();
 }
 
+// When an alarm rings next, strictly after `now`, as if it were switched
+// on: a one-time alarm's set time (or the next hour:minute), a repeating
+// alarm's next repeat day.
+export function nextRing(alarm: Alarm, now: number): number {
+  if (alarm.repeatDays.length === 0) {
+    return alarm.onceAt !== undefined && alarm.onceAt > now ? alarm.onceAt : nextOccurrence(alarm.hour, alarm.minute, now);
+  }
+  const date = new Date(now);
+  for (let offset = 0; offset <= 7; offset++) {
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset, alarm.hour, alarm.minute);
+    if (day.getTime() > now && alarm.repeatDays.includes(day.getDay())) return day.getTime();
+  }
+  return nextOccurrence(alarm.hour, alarm.minute, now);
+}
+
 // The start of the minute `now` is in.
 export function minuteStart(now: number): number {
   return Math.floor(now / 60_000) * 60_000;

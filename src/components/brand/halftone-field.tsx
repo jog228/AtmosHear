@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import Svg, { Circle, G, Rect } from 'react-native-svg';
@@ -12,20 +12,15 @@ type Props = {
   size: number;
   // 'rings' (frame 06), 'radial' (frame 04), or 'dashes' (frame 02).
   pattern: FieldPattern;
-  // Leaves a round gap in the middle for a ClockSun a third of the size
-  // (pass it as children to center it there).
-  hole?: boolean;
   // Grows and shrinks slowly, as a whole. Holds still with Reduce Motion.
   breathing?: boolean;
-  // Drawn in the middle, on top of the field. Doesn't breathe.
-  children?: ReactNode;
 };
 
 // The periwinkle halftone dot field from design/frames/. Decorative: hidden
 // from screen readers.
-export function HalftoneField({ size, pattern, hole = false, breathing = false, children }: Props) {
+export function HalftoneField({ size, pattern, breathing = false }: Props) {
   const { illustration } = useTheme();
-  const marks = useMemo(() => halftoneMarks(pattern, hole), [pattern, hole]);
+  const marks = useMemo(() => halftoneMarks(pattern), [pattern]);
   const breathe = useBreathing(breathing);
 
   return (
@@ -51,19 +46,6 @@ export function HalftoneField({ size, pattern, hole = false, breathing = false, 
           </G>
         </Svg>
       </Animated.View>
-      {children && <View style={styles.middle}>{children}</View>}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  middle: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

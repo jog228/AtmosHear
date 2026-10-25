@@ -33,7 +33,7 @@ export function HourlyForecast({ hours }: { hours: Hour[] }) {
               accessibilityLabel={`${hour.hourLabel}, ${describeConditions(hour.conditions)}, ${temperature.value(hour.temperature)} degrees, ${hour.rainChance} percent chance of rain`}
             >
               <Text style={styles.hour}>{hour.hourLabel}</Text>
-              <WeatherIcon conditions={hour.conditions} size={44} />
+              <WeatherIcon conditions={hour.conditions} />
               <Text style={styles.condition}>{conditionProfiles[mostSignificant(hour.conditions)].label}</Text>
               <Text style={styles.temperature}>{temperature.value(hour.temperature)}°</Text>
               <Text style={styles.rain}>{hour.rainChance}%</Text>

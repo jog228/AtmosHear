@@ -52,6 +52,25 @@ export const darkPalette = {
   red: '#FF7B72',
 };
 
+// Bedside mode (design/frames/9 · Centered dome@2x.png): dark and dim in
+// every theme, whatever the Appearance setting. Contrast on the background
+// (#091141): brightText 15.3:1, amber 11.0:1, mainText 9.3:1, domeAhead
+// 8.8:1, mutedText 5.9:1, offText 4.9:1, so every text color passes AA.
+// domePast (2.0:1) and divider (1.4:1) are decoration only, never text; the
+// dome's meaning is also in text ("7 hr 39 min until sunrise").
+export const bedsidePalette = {
+  background: darkPalette.navy,
+  mainText: darkPalette.gray,
+  brightText: darkPalette.iceBlue,
+  mutedText: '#8C92B0',
+  // Switched-off alarms.
+  offText: '#7E84A6',
+  domePast: '#3A4580',
+  domeAhead: darkPalette.periwinkle,
+  amber: palette.sun,
+  divider: '#1E2A6B',
+};
+
 // Named colors for the cue screens: light cue colors and each condition's
 // contrast pair (src/constants/condition-profiles.ts). The same in every
 // theme, since they describe the cue itself.

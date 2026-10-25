@@ -43,7 +43,7 @@ export function DailyForecast({ days }: { days: Day[] }) {
               accessibilityLabel={`${full}, ${describeConditions(day.conditions).toLowerCase()}, high ${high}, low ${low}`}
             >
               <Text style={styles.day}>{short}</Text>
-              <WeatherIcon conditions={day.conditions} size={28} />
+              <WeatherIcon conditions={day.conditions} />
               <Text style={styles.condition} numberOfLines={2}>
                 {conditionProfiles[mostSignificant(day.conditions)].label}
               </Text>

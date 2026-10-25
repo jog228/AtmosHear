@@ -7,6 +7,7 @@ export const CONDITION_IDS = [
   'thunderstorm',
   'snow',
   'sleet',
+  'hail',
   'fog',
   'wind',
   'extreme-heat',

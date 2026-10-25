@@ -12,6 +12,7 @@ export const HeavyRainIcon = dotIcon('HeavyRainIcon', dots['heavy-rain']);
 export const ThunderstormIcon = dotIcon('ThunderstormIcon', dots.thunderstorm);
 export const SnowIcon = dotIcon('SnowIcon', dots.snow);
 export const SleetIcon = dotIcon('SleetIcon', dots.sleet);
+export const HailIcon = dotIcon('HailIcon', dots.hail);
 export const FogIcon = dotIcon('FogIcon', dots.fog);
 export const WindIcon = dotIcon('WindIcon', dots.wind);
 export const ExtremeHeatIcon = dotIcon('ExtremeHeatIcon', dots['extreme-heat']);
