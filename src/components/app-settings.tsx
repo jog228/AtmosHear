@@ -21,6 +21,7 @@ const APPEARANCE_OPTIONS: { value: Appearance; label: string }[] = [
 
 const BEDSIDE_LABELS: Record<BedsideAppearance, string> = {
   auto: 'Auto',
+  system: 'System',
   light: 'Light',
   dark: 'Dark',
 };
@@ -54,7 +55,7 @@ export function AppearanceSettings() {
       {/* Bedside mode's own colors (src/features/alarms/bedside-palette.ts). */}
       <SegmentedRow
         label="Bedside mode"
-        description="Auto is light from sunrise and dark from sunset."
+        description="Auto follows sunrise and sunset."
         options={BEDSIDE_OPTIONS}
         selected={preferences.bedsideAppearance}
         onSelect={(value) => updatePreferences({ bedsideAppearance: value })}

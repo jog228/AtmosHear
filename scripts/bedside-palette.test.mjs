@@ -4,38 +4,55 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const { bedsideAppearanceOrAuto, guessDaytime, pickBedsidePalette } = await import(
+const { BEDSIDE_APPEARANCES, bedsideAppearanceOrAuto, guessDaytime, pickBedsidePalette } = await import(
   '../src/features/alarms/bedside-palette.ts'
 );
 
-const pick = (setting, appHighContrast, isDaytime) => pickBedsidePalette({ setting, appHighContrast, isDaytime });
+const pick = (setting, { appHighContrast = false, isDaytime = true, systemDark = false } = {}) =>
+  pickBedsidePalette({ setting, appHighContrast, isDaytime, systemDark });
 
-test('the app-wide High contrast switch always wins', () => {
-  for (const setting of ['auto', 'light', 'dark']) {
+test('the control shows Auto, System, Light, Dark, in that order', () => {
+  assert.deepEqual(BEDSIDE_APPEARANCES, ['auto', 'system', 'light', 'dark']);
+});
+
+test('the app-wide High contrast switch overrides all four', () => {
+  for (const setting of BEDSIDE_APPEARANCES) {
     for (const isDaytime of [true, false]) {
-      assert.equal(pick(setting, true, isDaytime), 'highContrast', `${setting}, ${isDaytime ? 'day' : 'night'}`);
+      for (const systemDark of [true, false]) {
+        assert.equal(pick(setting, { appHighContrast: true, isDaytime, systemDark }), 'highContrast', setting);
+      }
     }
   }
 });
 
-test('Light and Dark stay put day and night', () => {
-  assert.equal(pick('light', false, true), 'light');
-  assert.equal(pick('light', false, false), 'light');
-  assert.equal(pick('dark', false, true), 'dark');
-  assert.equal(pick('dark', false, false), 'dark');
+test('System follows the phone, day or night', () => {
+  for (const isDaytime of [true, false]) {
+    assert.equal(pick('system', { isDaytime, systemDark: false }), 'light');
+    assert.equal(pick('system', { isDaytime, systemDark: true }), 'dark');
+  }
 });
 
-test('Auto is light from sunrise and dark from sunset', () => {
-  assert.equal(pick('auto', false, true), 'light');
-  assert.equal(pick('auto', false, false), 'dark');
+test('Light and Dark stay put, whatever the time or the phone', () => {
+  for (const isDaytime of [true, false]) {
+    for (const systemDark of [true, false]) {
+      assert.equal(pick('light', { isDaytime, systemDark }), 'light');
+      assert.equal(pick('dark', { isDaytime, systemDark }), 'dark');
+    }
+  }
 });
 
-test('a saved "highContrast" (from before it was removed), or anything unknown, loads as Auto', () => {
+test('Auto is light from sunrise and dark from sunset, whatever the phone', () => {
+  for (const systemDark of [true, false]) {
+    assert.equal(pick('auto', { isDaytime: true, systemDark }), 'light');
+    assert.equal(pick('auto', { isDaytime: false, systemDark }), 'dark');
+  }
+});
+
+test('saved values: each option loads as itself; "highContrast" or anything unknown loads as Auto', () => {
+  for (const setting of BEDSIDE_APPEARANCES) assert.equal(bedsideAppearanceOrAuto(setting), setting);
   assert.equal(bedsideAppearanceOrAuto('highContrast'), 'auto');
   assert.equal(bedsideAppearanceOrAuto('sepia'), 'auto');
   assert.equal(bedsideAppearanceOrAuto(null), 'auto');
-  assert.equal(bedsideAppearanceOrAuto('light'), 'light');
-  assert.equal(bedsideAppearanceOrAuto('dark'), 'dark');
 });
 
 test('without sun times, 7 AM to 7 PM counts as daytime', () => {

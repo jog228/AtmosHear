@@ -57,8 +57,8 @@ const PALETTE_FADE_MS = 2000;
 // sunset to sunrise (sunrise to sunset in the daytime), with the weather on
 // the left and the next alarms on the right. Its colors come from
 // Preferences › Appearance › Bedside mode (bedside-palette.ts): Auto (light
-// by day, dark by night), Light, or Dark; the app-wide High contrast switch
-// overrides it.
+// by day, dark by night), System (the phone's mode), Light, or Dark; the
+// app-wide High contrast switch overrides it.
 // Everything, the Flip button included, stays inside the safe area plus a
 // margin and is scaled to fit it (bedside-layout.ts), so nothing is ever
 // under the Dynamic Island, whichever way up. The weather and the sky come

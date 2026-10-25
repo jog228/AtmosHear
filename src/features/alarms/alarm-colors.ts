@@ -8,6 +8,8 @@ import {
   type BedsidePalette,
   type ThemeName,
 } from '@/constants/theme';
+import { useColorScheme } from 'react-native';
+
 import { useTheme } from '@/hooks/use-theme';
 
 import { pickBedsidePalette, type BedsidePaletteName } from './bedside-palette';
@@ -110,9 +112,9 @@ export function useAlarmColors(): AlarmColors {
 
 // Bedside mode's colors (and the ringing screen's over it): light, dark, or
 // high contrast, picked by bedside-palette.ts from the Bedside mode setting
-// (through the slots), the app-wide High contrast switch, and whether it's
-// daytime. Contrast notes are with the palettes in
-// src/constants/theme.ts.
+// (through the slots), the app-wide High contrast switch, whether it's
+// daytime (Auto), and the phone's light or dark mode (System). Contrast
+// notes are with the palettes in src/constants/theme.ts.
 export type BedsideColors = BedsidePalette;
 
 export const BEDSIDE_PALETTES: Record<BedsidePaletteName, BedsideColors> = {
@@ -124,6 +126,10 @@ export const BEDSIDE_PALETTES: Record<BedsidePaletteName, BedsideColors> = {
 export function useBedsideColors(isDaytime: boolean): { name: BedsidePaletteName; colors: BedsideColors } {
   const appHighContrast = useTheme().name === 'highContrast';
   const { appearance } = useBedsideSlots();
-  const name = pickBedsidePalette({ setting: appearance, appHighContrast, isDaytime });
+  // Live: changes when the phone switches modes. While the app's own
+  // Appearance is Light or Dark, use-theme.tsx overrides the color scheme
+  // so native controls match, and this reports that choice instead.
+  const systemDark = useColorScheme() === 'dark';
+  const name = pickBedsidePalette({ setting: appearance, appHighContrast, isDaytime, systemDark });
   return { name, colors: BEDSIDE_PALETTES[name] };
 }

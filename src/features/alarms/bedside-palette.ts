@@ -3,10 +3,11 @@
 
 export type BedsidePaletteName = 'light' | 'dark' | 'highContrast';
 
-// The Preferences › Appearance › Bedside mode setting. High contrast isn't
-// one of them: it comes only from the app-wide Accessibility switch.
-export type BedsideAppearance = 'auto' | 'light' | 'dark';
-export const BEDSIDE_APPEARANCES: BedsideAppearance[] = ['auto', 'light', 'dark'];
+// The Preferences › Appearance › Bedside mode setting, in the order the
+// control shows them. High contrast isn't one of them: it comes only from
+// the app-wide Accessibility switch.
+export type BedsideAppearance = 'auto' | 'system' | 'light' | 'dark';
+export const BEDSIDE_APPEARANCES: BedsideAppearance[] = ['auto', 'system', 'light', 'dark'];
 
 // A saved value as a setting: anything else (including 'highContrast',
 // saved before it was removed) is Auto.
@@ -15,21 +16,24 @@ export function bedsideAppearanceOrAuto(value: unknown): BedsideAppearance {
 }
 
 // The app-wide High contrast switch always wins. Light and Dark stay put
-// day and night. Auto is light from
-// sunrise until sunset and dark from sunset until the next sunrise, so it
-// never glows next to someone sleeping. The app's Appearance doesn't
-// matter here.
+// day and night. System follows the phone's light or dark mode. Auto is
+// light from sunrise until sunset and dark from sunset until the next
+// sunrise, so it never glows next to someone sleeping.
 export function pickBedsidePalette({
   setting,
   appHighContrast,
   isDaytime,
+  systemDark,
 }: {
   setting: BedsideAppearance;
   appHighContrast: boolean;
   isDaytime: boolean;
+  // The phone is in dark mode (useColorScheme).
+  systemDark: boolean;
 }): BedsidePaletteName {
   if (appHighContrast) return 'highContrast';
   if (setting === 'light' || setting === 'dark') return setting;
+  if (setting === 'system') return systemDark ? 'dark' : 'light';
   return isDaytime ? 'light' : 'dark';
 }
 

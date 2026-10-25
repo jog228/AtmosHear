@@ -14,8 +14,9 @@ export type DevWeatherSource = 'test' | 'open-meteo' | 'nws';
 
 export type Preferences = {
   appearance: Appearance;
-  // Bedside mode's own colors: Auto (light by day, dark by night), Light, or
-  // Dark. High contrast comes only from `highContrast`.
+  // Bedside mode's own colors: Auto (light by day, dark by night), System
+  // (the phone's mode), Light, or Dark. High contrast comes only from
+  // `highContrast`.
   bedsideAppearance: BedsideAppearance;
   temperatureUnit: TemperatureSetting;
   // Not a setting: the country of the last live location ("US"), kept so

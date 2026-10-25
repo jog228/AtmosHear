@@ -154,7 +154,16 @@ export function SegmentedControl<T extends string>({
             accessibilityLabel={option.spoken ?? option.label}
             accessibilityHint={accessibilityHint}
           >
-            <Text style={[styles.segmentText, isSelected && styles.segmentTextSelected]}>{option.label}</Text>
+            {/* One line each: shrinks a little rather than wrap when four
+                options share the row. */}
+            <Text
+              style={[styles.segmentText, isSelected && styles.segmentTextSelected]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {option.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -361,7 +370,6 @@ function createStyles(theme: Theme) {
     segmentText: {
       ...typography.title,
       color: colors.textPrimary,
-      // Long labels ("High contrast") wrap, centered.
       textAlign: 'center',
     },
     stackedRow: {
