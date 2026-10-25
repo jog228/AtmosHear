@@ -15,14 +15,15 @@ export const ONBOARDING_STEPS = 5;
 const TITLE_MAX_SCALE = 1.5;
 const MIN_TOUCH = 44;
 
-// Finishing or skipping: remember it, then go to the tab for the time of
-// day. dismissTo replaces onboarding on a first launch, and returns to the
-// tabs underneath when it was replayed from Developer settings.
+// Finishing or skipping: save the flag (waiting for it, so it can't be lost
+// if the app closes right after), then go to the tab for the time of day.
+// dismissTo replaces onboarding on a first launch, and returns to the tabs
+// underneath when it was replayed from Developer settings.
 export function useFinishOnboarding() {
   const router = useRouter();
   const { startTab } = useOpeningPreferences();
-  return () => {
-    markOnboardingCompleted();
+  return async () => {
+    await markOnboardingCompleted();
     router.dismissTo(startTab() === 'alarms' ? '/alarms' : '/weather');
   };
 }
