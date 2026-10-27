@@ -3,9 +3,9 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { BedsideColors } from './alarm-colors';
 import { guessDaytime, type BedsideAppearance } from './bedside-palette';
 
-// Bedside mode shows weather and the sky, but alarm code can't import
-// weather code. So the screen has slots that the root layout fills in from
-// the weather side. Empty slots: no weather column, and a plain arc instead
+// Bedside mode shows weather and the sky, and the ringing screen the
+// weather, but alarm code can't import weather code. So the screens have
+// slots that the root layout fills in from the weather side. Empty slots: no weather column, and a plain arc instead
 // of the sunrise/sunset dome. The clock and alarms always show.
 
 // The dome's stretch of sky at a moment, already in words.
@@ -20,6 +20,17 @@ export type BedsideSky = {
   // Under the clock, e.g. "7 hr 39 min until sunrise", and spoken.
   untilText: string;
   untilSpoken: string;
+};
+
+// The weather on the ringing and snoozed screens, already in words. The
+// same weather the wake sound plays (src/services/wake-weather.ts).
+export type RingWeather = {
+  // "Wind now, 64°".
+  headline: string;
+  // "Playing the wind sound", or null when none of it has a sound.
+  playing: string | null;
+  // "Wind now, 64 degrees".
+  spoken: string;
 };
 
 export type BedsideSlots = {
@@ -40,6 +51,9 @@ export type BedsideSlots = {
   // while Developer mode is on, otherwise the same. Display only; alarms
   // always ring on the real clock.
   now: (real: number) => number;
+  // While an alarm rings or is snoozed (in or out of bedside mode), the
+  // weather to show with it; null without weather.
+  ringWeather: RingWeather | null;
 };
 
 const EMPTY: BedsideSlots = {
@@ -49,6 +63,7 @@ const EMPTY: BedsideSlots = {
   debug: false,
   appearance: 'auto',
   now: (real) => real,
+  ringWeather: null,
 };
 
 const BedsideSlotsContext = createContext<BedsideSlots>(EMPTY);

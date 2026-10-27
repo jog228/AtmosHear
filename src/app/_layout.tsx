@@ -17,6 +17,7 @@ import { loadOnboardingStatus } from '@/features/onboarding/onboarding-storage';
 import { BedsideSlotsProvider } from '@/features/alarms/bedside-slots';
 import { OpeningPreferencesProvider } from '@/features/preferences/use-opening-preferences';
 import { useBedsideWeather } from '@/hooks/use-bedside-weather';
+import { useRingWeather } from '@/hooks/use-ring-weather';
 import { PreferencesProvider, usePreferences } from '@/hooks/use-preferences';
 import type { Theme } from '@/constants/theme';
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
@@ -62,10 +63,13 @@ function OpeningPreferences({ children }: { children: ReactNode }) {
   );
 }
 
-// Fills bedside mode's weather and sky slots from the weather side, since
-// alarm code can't import weather code.
+// Fills bedside mode's weather and sky slots, and the ringing screen's
+// weather, from the weather side, since alarm code can't import weather
+// code.
 function BedsideWeather({ children }: { children: ReactNode }) {
-  return <BedsideSlotsProvider value={useBedsideWeather()}>{children}</BedsideSlotsProvider>;
+  const bedside = useBedsideWeather();
+  const ringWeather = useRingWeather();
+  return <BedsideSlotsProvider value={{ ...bedside, ringWeather }}>{children}</BedsideSlotsProvider>;
 }
 
 // Registers the weather on wake once, reading the latest preferences when

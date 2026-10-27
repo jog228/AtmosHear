@@ -22,7 +22,7 @@ type Loaded = { weather: WeatherData | null; latitude: number; longitude: number
 // and the phone's last known position, so it works offline. Loads only
 // while bedside mode is open. Without weather, the slots stay empty: no
 // weather column, and a plain arc without sunrise or sunset.
-export function useBedsideWeather(): BedsideSlots {
+export function useBedsideWeather(): Omit<BedsideSlots, 'ringWeather'> {
   const open = useBedsideOpen();
   const { preferences } = usePreferences();
   const temperature = useTemperature();
