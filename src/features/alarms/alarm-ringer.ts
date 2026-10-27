@@ -24,11 +24,14 @@ const GAIN_RAMP_MS = 1000;
 // Gives up if nobody answers.
 const AUTO_STOP_MS = 10 * 60_000;
 export const SNOOZE_MS = 9 * 60_000;
+// The snoozed screen's "Add 5 min".
+export const SNOOZE_EXTEND_MS = 5 * 60_000;
 // A strong beat every second: three heavy taps close together, so it can
 // be felt (and woken to) without hearing the tone.
 const BUZZ = taps('heavy', [0, 100, 200]);
 const BUZZ_EVERY_MS = 1000;
 
+// Called when the ring or the snooze changes.
 type Listener = (ring: Ring | null) => void;
 
 // Why a ring ended: Stop, Snooze, or nobody answered for 10 minutes.
@@ -58,6 +61,8 @@ class AlarmRinger {
   private timers: ReturnType<typeof setTimeout>[] = [];
   private intervals: ReturnType<typeof setInterval>[] = [];
   private snoozeTimer?: ReturnType<typeof setTimeout>;
+  // The ring a snooze will bring back (its `at` is when), or null.
+  private snoozedRing: Ring | null = null;
   // Rings already started, so the in-app check and a notification don't
   // both start the same one.
   private started = new Set<string>();
@@ -68,6 +73,11 @@ class AlarmRinger {
 
   current() {
     return this.ring;
+  }
+
+  // The snoozed ring waiting to come back, with `at` set to when it will.
+  snoozed() {
+    return this.snoozedRing;
   }
 
   // Starts ringing, unless this exact ring (alarm + minute) already
@@ -96,17 +106,31 @@ class AlarmRinger {
   }
 
   // Quiet for 9 minutes, then rings again (a backup notification covers a
-  // phone that locks in the meantime).
+  // phone that locks in the meantime). Until then, snoozed() returns it.
   snooze() {
     const ring = this.ring;
     if (!ring) return;
+    // Set before the ring ends, so listeners never see neither (the
+    // ringing screen would close).
+    this.snoozedRing = { ...ring, at: Date.now() + SNOOZE_MS };
     this.end('snooze');
-    const again: Ring = { ...ring, at: Date.now() + SNOOZE_MS };
-    this.snoozeTimer = setTimeout(() => {
-      this.snoozeBackup?.cancel();
-      this.start(again);
-    }, SNOOZE_MS);
-    this.snoozeBackup?.schedule(again);
+    this.scheduleSnooze();
+  }
+
+  // Moves the snoozed ring later (the snoozed screen's "Add 5 min"), and
+  // its backup notification with it.
+  extendSnooze(ms = SNOOZE_EXTEND_MS) {
+    if (!this.snoozedRing) return;
+    this.snoozedRing = { ...this.snoozedRing, at: this.snoozedRing.at + ms };
+    this.scheduleSnooze();
+    this.emit();
+  }
+
+  // Stop on the snoozed screen: it won't ring again.
+  dismissSnooze() {
+    if (!this.snoozedRing) return;
+    this.cancelSnooze();
+    this.emit();
   }
 
   stop() {
@@ -167,9 +191,22 @@ class AlarmRinger {
     if (ring) this.endListeners.forEach((listener) => listener(ring, reason));
   }
 
+  private scheduleSnooze() {
+    const again = this.snoozedRing;
+    if (!again) return;
+    clearTimeout(this.snoozeTimer);
+    this.snoozeBackup?.cancel();
+    this.snoozeTimer = setTimeout(() => {
+      this.snoozeBackup?.cancel();
+      this.start(again);
+    }, Math.max(0, again.at - Date.now()));
+    this.snoozeBackup?.schedule(again);
+  }
+
   private cancelSnooze() {
     clearTimeout(this.snoozeTimer);
     this.snoozeTimer = undefined;
+    this.snoozedRing = null;
     this.snoozeBackup?.cancel();
   }
 

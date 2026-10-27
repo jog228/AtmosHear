@@ -33,9 +33,28 @@ export type AlarmColors = {
   accent: string;
   // Text and icons on an accent fill (the Stop button, play buttons).
   onAccent: string;
-  switchOff: string;
+  // The drawn toggle (design/frames/14): a filled track with an amber
+  // thumb when on, an outlined track with a gray thumb when off.
+  switchTrackOn: string;
   switchThumbOn: string;
+  switchTrackOff: string;
+  switchBorderOff: string;
   switchThumbOff: string;
+  // Unselected day circles' outline (selected ones are accent/onAccent).
+  chipBorder: string;
+  // The dot on the "Alarm set" toast (the toast is accent/onAccent).
+  toastDot: string;
+  // The dot rings around the clock-face sun: the inner (warm) and outer
+  // (cool) rings. Decoration only.
+  ringsWarm: string;
+  ringsCool: string;
+  // The delete confirmation: its sheet, the dimmed screen behind, the
+  // strong "Delete alarm" button, and the quiet "Keep alarm" one.
+  sheet: string;
+  scrim: string;
+  strongButton: string;
+  onStrongButton: string;
+  quietButton: string;
   // Delete actions: the fill, and text or icons on top of it.
   danger: string;
   onDanger: string;
@@ -48,7 +67,7 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     background: palette.mist,
     card: palette.white,
     cardBorderWidth: 0,
-    separator: withAlpha(palette.gray, 0.5),
+    separator: palette.line,
     text: palette.ink,
     secondaryText: palette.slate,
     // 8.8:1 on white. gray would look more like Apple's but fails AA.
@@ -56,10 +75,22 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     accent: palette.deepBlue,
     // 12:1.
     onAccent: palette.white,
-    // 3.1:1 on white, enough for a control.
-    switchOff: palette.gray,
-    switchThumbOn: palette.white,
-    switchThumbOff: palette.white,
+    switchTrackOn: palette.deepBlue,
+    switchThumbOn: palette.sun,
+    switchTrackOff: palette.white,
+    // 3:1 on mist and white, enough for a control's outline.
+    switchBorderOff: palette.gray,
+    switchThumbOff: palette.gray,
+    chipBorder: palette.gray,
+    toastDot: palette.sun,
+    ringsWarm: palette.sun,
+    ringsCool: palette.periwinkle,
+    sheet: palette.white,
+    scrim: withAlpha(palette.ink, 0.45),
+    // 19:1.
+    strongButton: palette.ink,
+    onStrongButton: palette.white,
+    quietButton: palette.mist,
     danger: palette.red,
     onDanger: palette.white,
     notice: palette.slate,
@@ -76,10 +107,23 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     accent: darkPalette.yellow,
     // 13.5:1.
     onAccent: darkPalette.navy,
-    switchOff: withAlpha(darkPalette.gray, 0.4),
-    // Navy on the yellow track; white when off.
+    // Navy on the yellow track.
+    switchTrackOn: darkPalette.yellow,
     switchThumbOn: darkPalette.navy,
-    switchThumbOff: darkPalette.white,
+    switchTrackOff: darkPalette.navyCard,
+    switchBorderOff: darkPalette.gray,
+    switchThumbOff: darkPalette.gray,
+    chipBorder: darkPalette.gray,
+    // Amber would vanish on the yellow toast.
+    toastDot: darkPalette.navy,
+    ringsWarm: darkPalette.yellow,
+    ringsCool: darkPalette.periwinkle,
+    sheet: darkPalette.navyCard,
+    scrim: withAlpha(darkPalette.black, 0.55),
+    // 17:1.
+    strongButton: darkPalette.white,
+    onStrongButton: darkPalette.navy,
+    quietButton: darkPalette.navy,
     danger: darkPalette.red,
     onDanger: darkPalette.navy,
     notice: darkPalette.gray,
@@ -97,9 +141,20 @@ const COLORS: Record<ThemeName, AlarmColors> = {
     accent: palette.sun,
     // 11.7:1.
     onAccent: palette.ink,
-    switchOff: palette.white,
+    switchTrackOn: palette.sun,
     switchThumbOn: palette.ink,
-    switchThumbOff: palette.ink,
+    switchTrackOff: palette.ink,
+    switchBorderOff: palette.white,
+    switchThumbOff: palette.white,
+    chipBorder: palette.white,
+    toastDot: palette.ink,
+    ringsWarm: palette.sun,
+    ringsCool: palette.white,
+    sheet: palette.ink,
+    scrim: withAlpha(palette.ink, 0.7),
+    strongButton: palette.white,
+    onStrongButton: palette.ink,
+    quietButton: palette.ink,
     danger: darkPalette.red,
     onDanger: palette.ink,
     notice: palette.white,

@@ -4,13 +4,17 @@ import { useState } from 'react';
 import { AccessibilityInfo, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { radius, spacing } from '@/constants/theme';
+import { LARGE_TEXT_MAX_SCALE, radius, spacing } from '@/constants/theme';
+import { useMinuteClock } from '@/hooks/use-minute-clock';
 import { useTheme } from '@/hooks/use-theme';
 
 import { useAlarmColors, type AlarmColors } from './alarm-colors';
-import { DAY_NAMES, repeatSummary, timeText } from './alarm-format';
+import { repeatSummary, timeText, untilText } from './alarm-format';
+import { BigButton, DayChips, SunRings } from './alarm-parts';
+import { nextOccurrence, nextRing } from './alarm-schedule';
 import { ALARM_TONES, DEFAULT_TONE, TONE_IDS, type AlarmTone } from './alarm-tones';
 import { DEFAULT_LABEL, type Alarm, type AlarmDraft } from './alarm-types';
+import { DeleteSheet } from './delete-sheet';
 import { useTonePreview } from './tone-preview';
 
 type Props = {
@@ -25,17 +29,22 @@ type Props = {
   onClose: () => void;
 };
 
-// The Add Alarm / Edit Alarm sheet, like Apple's Clock: Cancel, title, Save,
-// a scroll-wheel time picker, then Repeat, Label, and Sound. Repeat and
-// Sound open lists inside the sheet. Give it a new `key` each time it opens so it
-// starts fresh.
+// The New alarm / Edit alarm sheet (design/frames/16 Create alarm.png and
+// 17 Edit alarm.png): Cancel, the title, and Delete (when editing); the
+// clock-face sun showing the chosen time and how long until it rings; the
+// scroll-wheel time picker; the repeat days; Label and Sound; and Save
+// alarm along the bottom. Sound opens the tone list inside the sheet, and
+// Delete asks first (delete-sheet.tsx). Give it a new `key` each time it
+// opens so it starts fresh.
 export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onClose }: Props) {
   const colors = useAlarmColors();
   const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<AlarmDraft>(() => startingDraft(alarm));
-  const [page, setPage] = useState<'main' | 'repeat' | 'sound'>('main');
+  const [page, setPage] = useState<'main' | 'sound'>('main');
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const now = useMinuteClock(visible);
 
   const change = (changes: Partial<AlarmDraft>) => {
     setDraft((current) => ({ ...current, ...changes }));
@@ -55,30 +64,49 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
         : [...draft.repeatDays, day],
     });
 
+  // Saving switches the alarm on, so this is when it would ring.
+  const until = untilText(
+    nextRing(
+      { ...draft, id: '', enabled: true, createdAt: 0, onceAt: nextOccurrence(draft.hour, draft.minute, now) },
+      now,
+    ) - now,
+  );
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={() => (confirmDelete ? setConfirmDelete(false) : page === 'sound' ? setPage('main') : onClose())}
+    >
       <View style={styles.sheet}>
         {page === 'main' ? (
           <SheetHeader
             colors={colors}
             left={{ label: 'Cancel', onPress: onClose }}
-            title={alarm ? 'Edit Alarm' : 'Add Alarm'}
-            right={{ label: 'Save', onPress: save, bold: true }}
+            title={alarm ? 'Edit alarm' : 'New alarm'}
+            right={alarm ? { label: 'Delete', onPress: () => setConfirmDelete(true) } : undefined}
           />
         ) : (
-          <SheetHeader
-            colors={colors}
-            left={{ label: 'Back', onPress: () => setPage('main'), back: true }}
-            title={page === 'repeat' ? 'Repeat' : 'Sound'}
-          />
+          <SheetHeader colors={colors} left={{ label: 'Back', onPress: () => setPage('main'), back: true }} title="Sound" />
         )}
 
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
+          contentContainerStyle={[styles.content, page === 'sound' && { paddingBottom: insets.bottom + spacing.xl }]}
           keyboardShouldPersistTaps="handled"
         >
           {page === 'main' ? (
             <>
+              <View style={styles.summary} accessible accessibilityLabel={`${until.spoken} until it rings`}>
+                <SunRings size={112} clock={{ hour: draft.hour, minute: draft.minute }} />
+                <View style={styles.summaryText}>
+                  <Text style={styles.until} maxFontSizeMultiplier={LARGE_TEXT_MAX_SCALE}>
+                    {until.short}
+                  </Text>
+                  <Text style={styles.untilCaption}>until it rings</Text>
+                </View>
+              </View>
+
               <TimePicker
                 hour={draft.hour}
                 minute={draft.minute}
@@ -86,56 +114,46 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
                 onChange={(hour, minute) => change({ hour, minute })}
               />
 
-              <View style={styles.group}>
-                <Pressable
-                  style={styles.row}
-                  onPress={() => setPage('repeat')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Repeat, ${repeatSummary(draft.repeatDays)}`}
-                >
-                  <Text style={styles.rowLabel}>Repeat</Text>
-                  <Text style={styles.rowValue} numberOfLines={1}>
-                    {repeatSummary(draft.repeatDays)}
-                  </Text>
-                  <SymbolView
-                    name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                    size={14}
-                    tintColor={colors.secondaryText}
-                    accessible={false}
-                  />
-                </Pressable>
-                <View style={[styles.row, styles.divider]}>
-                  <Text style={styles.rowLabel} importantForAccessibility="no" accessibilityElementsHidden>
-                    Label
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={draft.label}
-                    onChangeText={(label) => change({ label })}
-                    placeholder={DEFAULT_LABEL}
-                    placeholderTextColor={colors.secondaryText}
-                    selectionColor={colors.accent}
-                    returnKeyType="done"
-                    clearButtonMode="while-editing"
-                    accessibilityLabel="Label"
-                  />
+              <View style={styles.repeat}>
+                <Text style={styles.caption} accessibilityRole="header">
+                  Repeat
+                </Text>
+                <DayChips days={draft.repeatDays} onToggle={toggleDay} />
+                <Text style={styles.repeatSummary}>{repeatSummary(draft.repeatDays)}</Text>
+              </View>
+
+              <View style={styles.rows}>
+                <View style={styles.row}>
+                  <View style={styles.rowText}>
+                    <Text style={styles.caption} importantForAccessibility="no" accessibilityElementsHidden>
+                      Label
+                    </Text>
+                    <TextInput
+                      style={styles.input}
+                      value={draft.label}
+                      onChangeText={(label) => change({ label })}
+                      placeholder={DEFAULT_LABEL}
+                      placeholderTextColor={colors.secondaryText}
+                      selectionColor={colors.accent}
+                      returnKeyType="done"
+                      clearButtonMode="while-editing"
+                      accessibilityLabel="Label"
+                    />
+                  </View>
                 </View>
                 <Pressable
-                  style={[styles.row, styles.divider]}
+                  style={({ pressed }) => [styles.row, styles.divider, pressed && styles.pressed]}
                   onPress={() => setPage('sound')}
                   accessibilityRole="button"
                   accessibilityLabel={`Sound, ${ALARM_TONES[draft.tone].label}`}
                 >
-                  <Text style={styles.rowLabel}>Sound</Text>
-                  <Text style={styles.rowValue} numberOfLines={1}>
-                    {ALARM_TONES[draft.tone].label}
-                  </Text>
-                  <SymbolView
-                    name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                    size={14}
-                    tintColor={colors.secondaryText}
-                    accessible={false}
-                  />
+                  <View style={styles.rowText}>
+                    <Text style={styles.caption}>Sound</Text>
+                    <Text style={styles.value} numberOfLines={1}>
+                      {ALARM_TONES[draft.tone].label}
+                    </Text>
+                  </View>
+                  <Chevron colors={colors} />
                 </Pressable>
               </View>
 
@@ -144,54 +162,47 @@ export function AlarmEditor({ visible, alarm, uses24Hour, onSave, onDelete, onCl
                   {message}
                 </Text>
               )}
-
-              {alarm && (
-                <Pressable
-                  style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
-                  onPress={onDelete}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete ${timeText(alarm.hour, alarm.minute, uses24Hour)} alarm`}
-                >
-                  <Text style={styles.deleteText}>Delete Alarm</Text>
-                </Pressable>
-              )}
             </>
-          ) : page === 'sound' ? (
-            <ToneList selected={draft.tone} onSelect={(tone) => change({ tone })} />
           ) : (
-            <View style={styles.group}>
-              {DAY_NAMES.map((name, day) => {
-                const checked = draft.repeatDays.includes(day);
-                return (
-                  <Pressable
-                    key={name}
-                    style={[styles.row, day > 0 && styles.divider]}
-                    onPress={() => toggleDay(day)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked }}
-                    accessibilityLabel={`Every ${name}`}
-                  >
-                    <Text style={styles.rowLabel}>Every {name}</Text>
-                    {checked && (
-                      <SymbolView
-                        name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-                        size={18}
-                        tintColor={colors.accent}
-                        accessible={false}
-                      />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
+            <ToneList selected={draft.tone} onSelect={(tone) => change({ tone })} />
           )}
         </ScrollView>
+
+        {page === 'main' && (
+          <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+            <BigButton label="Save alarm" onPress={save} />
+          </View>
+        )}
+
+        {alarm && confirmDelete && (
+          <DeleteSheet
+            alarm={alarm}
+            uses24Hour={uses24Hour}
+            onDelete={() => {
+              setConfirmDelete(false);
+              onDelete();
+            }}
+            onKeep={() => setConfirmDelete(false)}
+          />
+        )}
       </View>
     </Modal>
   );
 }
 
-type HeaderButton = { label: string; onPress: () => void; bold?: boolean; back?: boolean };
+function Chevron({ colors }: { colors: AlarmColors }) {
+  return (
+    <SymbolView
+      name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+      size={18}
+      weight="semibold"
+      tintColor={colors.text}
+      accessible={false}
+    />
+  );
+}
+
+type HeaderButton = { label: string; onPress: () => void; back?: boolean };
 
 function SheetHeader({
   colors,
@@ -208,16 +219,22 @@ function SheetHeader({
   const button = (item: HeaderButton | undefined, align: 'left' | 'right') => (
     <View style={[styles.headerSide, align === 'right' && styles.headerRight]}>
       {item && (
-        <Pressable style={styles.headerButton} onPress={item.onPress} accessibilityRole="button" accessibilityLabel={item.label}>
+        <Pressable
+          style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+          onPress={item.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={item.label}
+        >
           {item.back && (
             <SymbolView
               name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
               size={17}
-              tintColor={colors.accent}
+              weight="semibold"
+              tintColor={colors.text}
               accessible={false}
             />
           )}
-          <Text style={[styles.headerButtonText, item.bold && styles.bold]}>{item.label}</Text>
+          <Text style={styles.headerButtonText}>{item.label}</Text>
         </Pressable>
       )}
     </View>
@@ -278,13 +295,15 @@ function TimePicker({
       accessibilityLabel={`Alarm time, ${timeText(hour, minute, uses24Hour)}`}
       accessibilityHint="Opens the time picker"
     >
-      <Text style={styles.androidTimeText}>{timeText(hour, minute, uses24Hour)}</Text>
+      <Text style={styles.androidTimeText} maxFontSizeMultiplier={LARGE_TEXT_MAX_SCALE}>
+        {timeText(hour, minute, uses24Hour)}
+      </Text>
     </Pressable>
   );
 }
 
-// The tones, like the Sound library's rows: name and description, a check
-// on the chosen one, and a round play button that previews it. One preview
+// The tones as bare rows between lines: name and description, a check on
+// the chosen one, and a round play button that previews it. One preview
 // at a time; it stops when this list closes (Back, Save, or Cancel).
 function ToneList({ selected, onSelect }: { selected: AlarmTone; onSelect: (tone: AlarmTone) => void }) {
   const colors = useAlarmColors();
@@ -292,7 +311,7 @@ function ToneList({ selected, onSelect }: { selected: AlarmTone; onSelect: (tone
   const preview = useTonePreview();
 
   return (
-    <View style={styles.group}>
+    <View style={styles.rows} accessibilityRole="radiogroup">
       {TONE_IDS.map((tone, i) => {
         const { label, description } = ALARM_TONES[tone];
         const checked = tone === selected;
@@ -311,13 +330,14 @@ function ToneList({ selected, onSelect }: { selected: AlarmTone; onSelect: (tone
                   <SymbolView
                     name={{ ios: 'checkmark', android: 'check', web: 'check' }}
                     size={18}
+                    weight="bold"
                     tintColor={colors.accent}
                     accessible={false}
                   />
                 )}
               </View>
-              <View style={styles.toneText}>
-                <Text style={styles.toneName}>{label}</Text>
+              <View style={styles.rowText}>
+                <Text style={styles.value}>{label}</Text>
                 <Text style={styles.toneDescription}>{description}</Text>
               </View>
             </Pressable>
@@ -357,6 +377,7 @@ function startingDraft(alarm: Alarm | null): AlarmDraft {
 const PLAY_SIZE = 48;
 
 function createStyles(colors: AlarmColors) {
+  const line = colors.cardBorderWidth || StyleSheet.hairlineWidth * 2;
   return StyleSheet.create({
     sheet: {
       flex: 1,
@@ -385,21 +406,40 @@ function createStyles(colors: AlarmColors) {
       paddingHorizontal: spacing.sm,
     },
     headerButtonText: {
-      fontSize: 17,
-      color: colors.accent,
-    },
-    bold: {
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
     },
     headerTitle: {
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: 18,
+      fontWeight: '700',
       color: colors.text,
       textAlign: 'center',
     },
     content: {
-      padding: spacing.md,
-      gap: spacing.lg,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.lg,
+      gap: spacing.md,
+    },
+    summary: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    summaryText: {
+      flex: 1,
+    },
+    until: {
+      fontSize: 34,
+      lineHeight: 38,
+      fontWeight: '800',
+      letterSpacing: -1,
+      color: colors.text,
+    },
+    untilCaption: {
+      fontSize: 17,
+      color: colors.secondaryText,
     },
     picker: {
       alignSelf: 'center',
@@ -412,66 +452,64 @@ function createStyles(colors: AlarmColors) {
     },
     androidTimeText: {
       fontSize: 56,
-      fontWeight: '300',
+      fontWeight: '700',
       color: colors.text,
     },
-    group: {
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
-      borderWidth: colors.cardBorderWidth,
+    repeat: {
+      gap: spacing.sm,
+    },
+    caption: {
+      fontSize: 15,
+      color: colors.secondaryText,
+    },
+    repeatSummary: {
+      fontSize: 15,
+      color: colors.secondaryText,
+    },
+    rows: {
+      borderTopWidth: line,
+      borderBottomWidth: line,
       borderColor: colors.separator,
-      overflow: 'hidden',
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      minHeight: 48,
-      paddingHorizontal: spacing.md,
+      minHeight: 72,
+      paddingVertical: spacing.sm,
     },
     divider: {
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: line,
       borderTopColor: colors.separator,
     },
-    rowLabel: {
+    rowText: {
       flex: 1,
-      fontSize: 17,
-      color: colors.text,
     },
-    rowValue: {
-      fontSize: 17,
-      color: colors.secondaryText,
-      flexShrink: 1,
+    value: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text,
     },
     input: {
-      flex: 2,
-      fontSize: 17,
+      fontSize: 20,
+      fontWeight: '700',
       color: colors.text,
-      textAlign: 'right',
       minHeight: 44,
+      paddingVertical: 0,
     },
     message: {
       fontSize: 15,
       color: colors.notice,
-      textAlign: 'center',
     },
-    deleteButton: {
-      backgroundColor: colors.danger,
-      borderRadius: radius.md,
-      minHeight: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    deleteText: {
-      fontSize: 17,
-      fontWeight: '600',
-      color: colors.onDanger,
+    footer: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      backgroundColor: colors.background,
     },
     toneRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
     },
     toneMain: {
@@ -485,14 +523,6 @@ function createStyles(colors: AlarmColors) {
       width: 20,
       alignItems: 'center',
     },
-    toneText: {
-      flex: 1,
-    },
-    toneName: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.text,
-    },
     toneDescription: {
       fontSize: 15,
       color: colors.secondaryText,
@@ -500,13 +530,13 @@ function createStyles(colors: AlarmColors) {
     playButton: {
       width: PLAY_SIZE,
       height: PLAY_SIZE,
-      borderRadius: PLAY_SIZE / 2,
+      borderRadius: radius.pill,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.accent,
     },
     pressed: {
-      opacity: 0.7,
+      opacity: 0.6,
     },
   });
 }

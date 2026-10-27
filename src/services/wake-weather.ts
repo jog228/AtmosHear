@@ -87,8 +87,8 @@ async function currentConditions(preferences: Preferences): Promise<ConditionId[
 }
 
 // The conditions with a loop. A severe alert's conditions play, but not its
-// beeps.
-function playable(conditions: ConditionId[]): ConditionId[] {
+// beeps. (The ringing screen names these as "Playing the … sound".)
+export function playable(conditions: ConditionId[]): ConditionId[] {
   return conditions.filter((id) => id !== 'severe-alert' && conditionProfiles[id].sound);
 }
 
